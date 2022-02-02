@@ -33,7 +33,7 @@ class Board:
                     # print("j = {}".format(j))
                     boardColsRep.append(" ")
                     boardColsRep.append(
-                        self.state.boardRep[int((i-1)/2)][j])
+                        self.state.boardRep[int((i-1)/2)][j][0])
                     boardColsRep.append(" ")
                     boardColsRep.append("|")
                 rowRef += 1
@@ -113,18 +113,20 @@ class State:
             for i in range (0, self.numObstacles + 1, 2):
                 col = ord(obstaclePositions[i]) - ord("a")
                 row = int(obstaclePositions[i+1])
-                self.boardRep[row][col][0] = "x"
+                tempList = list(self.boardRep[row][col])
+                tempList[0] = "x"
+                self.boardRep[row][col] = tuple(tempList)
 
         # Updating cost to move TO selected grid
-            stepCosts = input("")
-            stepCosts = re.split("(\d+)", 
-                                        obstaclePositions[38:]
-                                        .replace(" ", ""))
+            # stepCosts = input("")
+            # stepCosts = re.split("(\d+)", 
+            #                             obstaclePositions[38:]
+            #                             .replace(" ", ""))
 
-            for i in range (0, self.numObstacles + 1, 2):
-                col = ord(obstaclePositions[i]) - ord("a")
-                row = int(obstaclePositions[i+1])
-                self.boardRep[row][col][0] = "x"
+            # for i in range (0, self.numObstacles + 1, 2):
+            #     col = ord(obstaclePositions[i]) - ord("a")
+            #     row = int(obstaclePositions[i+1])
+            #     self.boardRep[row][col][0] = "x"
 
 def search():
     pass
