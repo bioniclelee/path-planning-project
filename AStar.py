@@ -109,17 +109,51 @@ class State:
         self.numObstacles = int("".join(lines[2][20:]))
         # for updating self.boardRep with obstacle positions
         if (self.numObstacles > 0):
-            self.splitCoordsAndEditBoardRep(lines[3], 38, 0, "X")
+            self.splitCoordsAndEditBoardRep(lines[3], 38, 0, False, "X")
 
         # for updating self.boardRep with start position
         if (len(lines[-2]) > 0):
             self.splitCoordsAndEditBoardRep(lines[-2]
                                             .split(",")[-1]
-                                            .split("]")[0], 0, 0, "S")
+                                            .split("]")[0], 0, 0, False, "S")
 
         # for updating self.boardRep with goal position(s)
         if (len(lines[-1][31:]) > 0):
-            self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, "G")
+            self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
+
+        # updating pathCost to self.boardRep
+        rawList = list(lines[-7:4:-1])
+        self.posStr = ""
+        self.pathCostList = []
+        for i in range (0, len(rawList)):
+            rawEntry = rawList[i].rstrip("\n").replace("[","").replace("]","").split(",")
+            self.posStr += str(rawEntry[0])
+            # print (str(rawEntry[0]))
+            if (i != len(rawList) - 1):
+                self.posStr += " "
+            self.pathCostList.append(rawEntry[1])
+        
+        # print(str(self.posList))
+        
+        self.splitCoordsAndEditBoardRep(self.posStr, 0, 1, True, self.pathCostList)
+
+        # str(str(str(str(str(str(lines[-7:4:-1])
+        #                     .replace("]\\n",""))
+        #                     .replace("[",""))
+        #                     .replace("'",""))
+        #                     .split(","))
+        #                     .split(", "))
+
+        
+        # posList = []
+        # pathCostList = []
+        # for i in range (0, len(pathCostAndPosList),2):
+        #     posList.append(pathCostAndPosList[i])
+        #     pathCostList.append(pathCostAndPosList[i+1])
+        
+        # print (str(posList))
+        # self.splitCoordsAndEditBoardRep(str, 31, 0, False, "G")
+
         self.totPathCost = 0
         self.path = []
         self.nodesExplored = []
@@ -149,7 +183,7 @@ class State:
         #     row = int(obstaclePositions[i+1])
         #     self.boardRep[row][col][0] = "x"
 
-    def splitCoordsAndEditBoardRep(self, str, sliceInd, tuplePos, input):
+    def splitCoordsAndEditBoardRep(self, str, sliceInd, tuplePos, isList, input):
         newList = re.split("(\d+)", str[sliceInd:].replace(" ", ""))
         # print(newList)
 
@@ -157,7 +191,10 @@ class State:
             col = ord(newList[i]) - ord("a")
             row = int(newList[i+1])
             tempList = list(self.boardRep[row][col])
-            tempList[tuplePos] = input
+            if isList:
+                tempList[tuplePos] = input[int(i/2)]
+            else:
+                tempList[tuplePos] = input
             self.boardRep[row][col] = tuple(tempList)
 
 def search():
