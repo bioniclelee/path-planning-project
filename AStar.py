@@ -91,42 +91,74 @@ class State:
     start = None # pair of x, y coords
     goal = None  # pair of x, y coords
 
-    def __init__(self, rows, cols, numObstacles, start, goal):
-        self.rows = rows
-        self.cols = cols
-        self.boardRep = [[(" ", 1) for j in range(cols)] 
-                        for i in range(rows)]
-        self.numObstacles = numObstacles
-        self.start = start
-        self.goal = goal
+    def __init__(self, file):
+        with open(file) as f:
+            lines = f.readlines()
+        
+        lineCount = 0
+        for line in file:
+            if line != "\n":
+                lineCount += 1
+
+        self.rows = int("".join(lines[0][5:]))
+        self.cols = int("".join(lines[1][5:]))
+
+        self.boardRep = [[(" ", 1) for j in range(self.cols)] 
+                        for i in range(self.rows)]
+
+        self.numObstacles = int("".join(lines[2][20:]))
+        # for updating self.boardRep with obstacle positions
+        if (self.numObstacles > 0):
+            self.splitCoordsAndEditBoardRep(lines[3], 38, 0, "X")
+
+        # for updating self.boardRep with start position
+        if (len(lines[-2]) > 0):
+            self.splitCoordsAndEditBoardRep(lines[-2]
+                                            .split(",")[-1]
+                                            .split("]")[0], 0, 0, "S")
+
+        # for updating self.boardRep with goal position(s)
+        if (len(lines[-1][31:]) > 0):
+            self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, "G")
         self.totPathCost = 0
         self.path = []
         self.nodesExplored = []
 
         # Storing of obstacles in self.boardRep
-        if numObstacles > 0:
-            obstaclePositions = input("")
-            obstaclePositions = re.split("(\d+)", 
-                                        obstaclePositions[38:]
-                                        .replace(" ", ""))
+        # if self.numObstacles > 0:
+        #     obstaclePositions = lines[3]
+        #     obstaclePositions = re.split("(\d+)", 
+        #                                 obstaclePositions[38:]
+        #                                 .replace(" ", ""))
 
-            for i in range (0, self.numObstacles + 1, 2):
-                col = ord(obstaclePositions[i]) - ord("a")
-                row = int(obstaclePositions[i+1])
-                tempList = list(self.boardRep[row][col])
-                tempList[0] = "x"
-                self.boardRep[row][col] = tuple(tempList)
+        #     for i in range (0, self.numObstacles + 1, 2):
+        #         col = ord(obstaclePositions[i]) - ord("a")
+        #         row = int(obstaclePositions[i+1])
+        #         tempList = list(self.boardRep[row][col])
+        #         tempList[0] = "x"
+        #         self.boardRep[row][col] = tuple(tempList)
 
         # Updating cost to move TO selected grid
-            # stepCosts = input("")
-            # stepCosts = re.split("(\d+)", 
-            #                             obstaclePositions[38:]
-            #                             .replace(" ", ""))
+        # stepCosts = input("")
+        # stepCosts = re.split("(\d+)", 
+        #                             obstaclePositions[38:]
+        #                             .replace(" ", ""))
 
-            # for i in range (0, self.numObstacles + 1, 2):
-            #     col = ord(obstaclePositions[i]) - ord("a")
-            #     row = int(obstaclePositions[i+1])
-            #     self.boardRep[row][col][0] = "x"
+        # for i in range (0, self.numObstacles + 1, 2):
+        #     col = ord(obstaclePositions[i]) - ord("a")
+        #     row = int(obstaclePositions[i+1])
+        #     self.boardRep[row][col][0] = "x"
+
+    def splitCoordsAndEditBoardRep(self, str, sliceInd, tuplePos, input):
+        newList = re.split("(\d+)", str[sliceInd:].replace(" ", ""))
+        # print(newList)
+
+        for i in range (0, len(newList) - 1, 2):
+            col = ord(newList[i]) - ord("a")
+            row = int(newList[i+1])
+            tempList = list(self.boardRep[row][col])
+            tempList[tuplePos] = input
+            self.boardRep[row][col] = tuple(tempList)
 
 def search():
     pass
@@ -136,20 +168,17 @@ def search():
 # To return: List of moves and nodes explored
 def run_AStar():
     
-    print('hi')
-    
     # You can code in here but you cannot remove this function or change the return type
 
     moves, nodesExplored, pathCost= search() #For reference
     return moves, nodesExplored, pathCost #Format to be returned
 
 if __name__ == "__main__":
-    boardRows = int(input("Rows: "))
-    boardCols = int(input("Cols: "))
-    numObstacles = int(input("Number of obstacles: "))
+    # boardRows = int(input("Rows: "))
+    # boardCols = int(input("Cols: "))
+    # numObstacles = int(input("Number of obstacles: "))
 
-    state = State(boardRows, boardCols, numObstacles, 0, 0)
+
+    state = State(sys.argv[1])
     board = Board(state)
     board.printBoard()
-
-    
