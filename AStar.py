@@ -5,7 +5,21 @@ import sys
 
 # Helper functions to aid in your implementation. Can edit/remove
 class Piece:
-    pass
+    def __init__ (self, type):
+        self.type = type
+    
+    # returns moveList of possible moves from current position based on self.type
+    def possibleMoveList(self, currPos):
+        if (self.type == "King"):
+            pass
+        elif (self.type == "Queen"):
+            pass
+        elif (self.type == "Bishop"):
+            pass
+        elif (self.type == "Rook"):
+            pass
+        elif (self.type == "Knight"):
+            pass
 
 class Board:
     def __init__(self, state):
