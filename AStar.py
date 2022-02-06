@@ -2,6 +2,7 @@
 
 import re
 import sys
+from tracemalloc import start
 
 # Helper functions to aid in your implementation. Can edit/remove
 class Piece:
@@ -106,13 +107,16 @@ class State:
     goal = None  # pair of x, y coords
 
     def __init__(self, file):
+        # print("file = {}".format(str(file)))
         with open(file) as f:
             lines = f.readlines()
         
-        lineCount = 0
-        for line in file:
-            if line != "\n":
-                lineCount += 1
+        lineCount = len(lines)
+        # print(lineCount)
+        # for line in file:
+        #     if line != "\n":
+        #         lineCount += 1
+        # print("lineCount = {}".format(lineCount))
 
         self.rows = int("".join(lines[0][5:]))
         self.cols = int("".join(lines[1][5:]))
@@ -135,21 +139,60 @@ class State:
         if (len(lines[-1][31:]) > 0):
             self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
 
+        # Counting lines for end of pathCost list
+        endOfPathCostList = 0
+        for i in range (4, lineCount):
+            # print((lines[i].split(" "))[0])
+            firstWord = (lines[i].split(" "))[0]
+            if (firstWord == 'Number'):
+                endOfPathCostList = i
+                break
+
         # updating pathCost to self.boardRep
-        rawList = list(lines[-7:4:-1])
+        rawList = list(lines[endOfPathCostList - lineCount -1:4:-1])
         self.posStr = ""
         self.pathCostList = []
         for i in range (0, len(rawList)):
             rawEntry = rawList[i].rstrip("\n").replace("[","").replace("]","").split(",")
             self.posStr += str(rawEntry[0])
-            # print (str(rawEntry[0]))
             if (i != len(rawList) - 1):
                 self.posStr += " "
             self.pathCostList.append(rawEntry[1])
         
-        # print(str(self.posList))
-        
         self.splitCoordsAndEditBoardRep(self.posStr, 0, 1, True, self.pathCostList)
+
+        # updating enemy piece type and position
+        startOfEnemyPieceList = endOfPathCostList
+        enemyPieceList = lines[startOfEnemyPieceList][66::].replace("\n","").split(" ")
+        numberOfEnemyPieces = 0
+        for i in range (0, len(enemyPieceList)):
+            numberOfEnemyPieces += int(enemyPieceList[i])
+        
+        print(numberOfEnemyPieces)
+        # print(lines[startOfEnemyPieceList])
+
+        enemyPieces = []
+        enemyPiecesLocation = ""
+        for i in range (startOfEnemyPieceList + 2, startOfEnemyPieceList + 2 + numberOfEnemyPieces):
+            # print((lines[i].replace("[","").replace("]","").split(","))[0])
+            enemyPiecesAndLocation = lines[i].replace("[","").replace("]","").replace("\n","").split(",")
+            print("enemyPiecesAndLocation[1] = {}".format(enemyPiecesAndLocation[1]))
+            enemyPiecesLocation += enemyPiecesAndLocation[1]
+            enemyPiecesLocation += " "
+            print (enemyPiecesLocation)
+            pieceType = enemyPiecesAndLocation[0]
+            if (pieceType == "King"):
+                enemyPieces.append("K")
+            if (pieceType == "Queen"):
+                enemyPieces.append("Q")
+            if (pieceType == "Bishop"):
+                enemyPieces.append("B")
+            if (pieceType == "Rook"):
+                enemyPieces.append("R")
+            if (pieceType == "Knight"):
+                enemyPieces.append("H")   
+
+        self.splitCoordsAndEditBoardRep(enemyPiecesLocation, 0, 0, True, enemyPieces)
 
         # str(str(str(str(str(str(lines[-7:4:-1])
         #                     .replace("]\\n",""))
@@ -218,18 +261,24 @@ def search():
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
 # To return: List of moves and nodes explored
 def run_AStar():
-    
+
     # You can code in here but you cannot remove this function or change the return type
+    
+    # state = State(sys.argv[1])
+    # board = Board(state)
+    # board.printBoard()
 
     moves, nodesExplored, pathCost= search() #For reference
     return moves, nodesExplored, pathCost #Format to be returned
 
 if __name__ == "__main__":
+
+    # run_AStar()
     # boardRows = int(input("Rows: "))
     # boardCols = int(input("Cols: "))
     # numObstacles = int(input("Number of obstacles: "))
 
-
     state = State(sys.argv[1])
     board = Board(state)
     board.printBoard()
+    
