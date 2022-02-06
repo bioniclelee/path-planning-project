@@ -6,21 +6,49 @@ from tracemalloc import start
 
 # Helper functions to aid in your implementation. Can edit/remove
 class Piece:
-    def __init__ (self, type):
+    def __init__ (self, currPos, type):
         self.type = type
+        self.currPos = currPos
+        self.moveDirectionMatrix = []
+
+        # Storing of movement direction and extent
+        # matrix indices: index 1-8 for each octal direction starting at 12 o'clock
+        # 9 for knight movement
+        # cell value: 0 = no movement, 1 = 1 step, 2 = unlimited movement
+        if (self.type == "King"):
+            for i in range (0, 9):
+                self.moveDirectionMatrix.append(1)
+            self.moveDirectionMatrix.append(0)
+        elif (self.type == "Queen"):
+            for i in range (0, 9):
+                self.moveDirectionMatrix.append(2)
+            self.moveDirectionMatrix.append(0)
+        elif (self.type == "Bishop"):
+            for i in range (1, 9, 2):
+                self.moveDirectionMatrix.append(2)
+            self.moveDirectionMatrix.append(0)
+        elif (self.type == "Rook"):
+            for i in range (0, 9, 2):
+                self.moveDirectionMatrix.append(2)
+            self.moveDirectionMatrix.append(0)
+        elif (self.type == "Knight"):
+            for i in range (0, 9):
+                self.moveDirectionMatrix.append(0)
+            self.moveDirectionMatrix.append(1)
     
     # returns moveList of possible moves from current position based on self.type
-    def possibleMoveList(self, currPos):
-        if (self.type == "King"):
-            pass
-        elif (self.type == "Queen"):
-            pass
-        elif (self.type == "Bishop"):
-            pass
-        elif (self.type == "Rook"):
-            pass
-        elif (self.type == "Knight"):
-            pass
+    # def possibleMoveList(self, currPos):
+    #     if (self.type == "King"):
+    #         pass
+    #     elif (self.type == "Queen"):
+    #         pass
+    #     elif (self.type == "Bishop"):
+    #         pass
+    #     elif (self.type == "Rook"):
+    #         pass
+    #     elif (self.type == "Knight"):
+    #         pass
+
 
 class Board:
     def __init__(self, state):
@@ -75,29 +103,7 @@ class Board:
             for j in range (0, len(row)):
                 print(row[j], end = "")
             print("")
-            
 
-            # print ("i = {}".format(i))
-        #     print ("---", end = "")
-        #     for j in range (0, self.state.cols):
-        #         print ('----', end = "")
-        #     print("")
-        #     print ("{} |".format(rowRef), end = "")
-        #     for j in range (0, self.state.cols):
-        #         print ('   |', end = "")
-        #     print("")
-        #     rowRef += 1
-        # print ("---", end = "")
-        # for j in range (0, self.state.cols):
-        #     print ('----', end = "")
-        # print("")
-        
-        # print("  |", end = "")
-        # alphabet = 97
-        # for i in range (0, self.state.cols):
-        #     print(" {} |".format(chr(alphabet)),end  = "")
-        #     alphabet += 1
-        # print("")
 
 class State:
     rows = 0 # y
@@ -107,16 +113,10 @@ class State:
     goal = None  # pair of x, y coords
 
     def __init__(self, file):
-        # print("file = {}".format(str(file)))
         with open(file) as f:
             lines = f.readlines()
         
         lineCount = len(lines)
-        # print(lineCount)
-        # for line in file:
-        #     if line != "\n":
-        #         lineCount += 1
-        # print("lineCount = {}".format(lineCount))
 
         self.rows = int("".join(lines[0][5:]))
         self.cols = int("".join(lines[1][5:]))
@@ -124,16 +124,16 @@ class State:
         self.boardRep = [[(" ", 1) for j in range(self.cols)] 
                         for i in range(self.rows)]
 
-        self.numObstacles = int("".join(lines[2][20:]))
         # for updating self.boardRep with obstacle positions
+        self.numObstacles = int("".join(lines[2][20:]))
         if (self.numObstacles > 0):
             self.splitCoordsAndEditBoardRep(lines[3], 38, 0, False, "X")
 
         # for updating self.boardRep with start position
-        if (len(lines[-2]) > 0):
-            self.splitCoordsAndEditBoardRep(lines[-2]
-                                            .split(",")[-1]
-                                            .split("]")[0], 0, 0, False, "S")
+        # if (len(lines[-2]) > 0):
+        #     self.splitCoordsAndEditBoardRep(lines[-2]
+        #                                     .split(",")[-1]
+        #                                     .split("]")[0], 0, 0, False, "S")
 
         # for updating self.boardRep with goal position(s)
         if (len(lines[-1][31:]) > 0):
@@ -142,7 +142,6 @@ class State:
         # Counting lines for end of pathCost list
         endOfPathCostList = 0
         for i in range (4, lineCount):
-            # print((lines[i].split(" "))[0])
             firstWord = (lines[i].split(" "))[0]
             if (firstWord == 'Number'):
                 endOfPathCostList = i
@@ -167,19 +166,13 @@ class State:
         numberOfEnemyPieces = 0
         for i in range (0, len(enemyPieceList)):
             numberOfEnemyPieces += int(enemyPieceList[i])
-        
-        print(numberOfEnemyPieces)
-        # print(lines[startOfEnemyPieceList])
 
         enemyPieces = []
         enemyPiecesLocation = ""
         for i in range (startOfEnemyPieceList + 2, startOfEnemyPieceList + 2 + numberOfEnemyPieces):
-            # print((lines[i].replace("[","").replace("]","").split(","))[0])
             enemyPiecesAndLocation = lines[i].replace("[","").replace("]","").replace("\n","").split(",")
-            print("enemyPiecesAndLocation[1] = {}".format(enemyPiecesAndLocation[1]))
             enemyPiecesLocation += enemyPiecesAndLocation[1]
             enemyPiecesLocation += " "
-            print (enemyPiecesLocation)
             pieceType = enemyPiecesAndLocation[0]
             if (pieceType == "King"):
                 enemyPieces.append("K")
@@ -193,56 +186,44 @@ class State:
                 enemyPieces.append("H")   
 
         self.splitCoordsAndEditBoardRep(enemyPiecesLocation, 0, 0, True, enemyPieces)
-
-        # str(str(str(str(str(str(lines[-7:4:-1])
-        #                     .replace("]\\n",""))
-        #                     .replace("[",""))
-        #                     .replace("'",""))
-        #                     .split(","))
-        #                     .split(", "))
-
         
-        # posList = []
-        # pathCostList = []
-        # for i in range (0, len(pathCostAndPosList),2):
-        #     posList.append(pathCostAndPosList[i])
-        #     pathCostList.append(pathCostAndPosList[i+1])
-        
-        # print (str(posList))
-        # self.splitCoordsAndEditBoardRep(str, 31, 0, False, "G")
+        # instantiating enemy pieces
+
+        # updating own piece type and position
+        startOfOwnPieceList = startOfEnemyPieceList + 2 + numberOfEnemyPieces
+        ownPieceList = lines[startOfOwnPieceList][64::].replace("\n","").split(" ")
+        numberOfOwnPieces = 0
+        for i in range (0, len(ownPieceList)):
+            numberOfOwnPieces += int(ownPieceList[i])
+
+        ownPieces = []
+        ownPiecesLocation = ""
+        for i in range (startOfOwnPieceList + 2, startOfOwnPieceList + 2 + numberOfOwnPieces):
+            
+            ownPiecesAndLocation = lines[i].replace("[","").replace("]","").replace("\n","").split(",")
+            ownPiecesLocation += ownPiecesAndLocation[1]
+            ownPiecesLocation += " "
+            
+            pieceType = ownPiecesAndLocation[0]
+            if (pieceType == "King"):
+                ownPieces.append("Z")
+            if (pieceType == "Queen"):
+                ownPieces.append("X")
+            if (pieceType == "Bishop"):
+                ownPieces.append("C")
+            if (pieceType == "Rook"):
+                ownPieces.append("V")
+            if (pieceType == "Knight"):
+                ownPieces.append("B")   
+
+        self.splitCoordsAndEditBoardRep(ownPiecesLocation, 0, 0, True, ownPieces)
 
         self.totPathCost = 0
         self.path = []
         self.nodesExplored = []
 
-        # Storing of obstacles in self.boardRep
-        # if self.numObstacles > 0:
-        #     obstaclePositions = lines[3]
-        #     obstaclePositions = re.split("(\d+)", 
-        #                                 obstaclePositions[38:]
-        #                                 .replace(" ", ""))
-
-        #     for i in range (0, self.numObstacles + 1, 2):
-        #         col = ord(obstaclePositions[i]) - ord("a")
-        #         row = int(obstaclePositions[i+1])
-        #         tempList = list(self.boardRep[row][col])
-        #         tempList[0] = "x"
-        #         self.boardRep[row][col] = tuple(tempList)
-
-        # Updating cost to move TO selected grid
-        # stepCosts = input("")
-        # stepCosts = re.split("(\d+)", 
-        #                             obstaclePositions[38:]
-        #                             .replace(" ", ""))
-
-        # for i in range (0, self.numObstacles + 1, 2):
-        #     col = ord(obstaclePositions[i]) - ord("a")
-        #     row = int(obstaclePositions[i+1])
-        #     self.boardRep[row][col][0] = "x"
-
     def splitCoordsAndEditBoardRep(self, str, sliceInd, tuplePos, isList, input):
         newList = re.split("(\d+)", str[sliceInd:].replace(" ", ""))
-        # print(newList)
 
         for i in range (0, len(newList) - 1, 2):
             col = ord(newList[i]) - ord("a")
