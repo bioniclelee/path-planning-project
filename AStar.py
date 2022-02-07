@@ -6,7 +6,7 @@ from tracemalloc import start
 
 # Helper functions to aid in your implementation. Can edit/remove
 class Piece:
-    def __init__ (self, currPos, type):
+    def __init__ (self, type, currPos):
         self.type = type
         self.currPos = currPos
         self.moveDirectionMatrix = []
@@ -35,19 +35,9 @@ class Piece:
             for i in range (0, 9):
                 self.moveDirectionMatrix.append(0)
             self.moveDirectionMatrix.append(1)
-    
-    # returns moveList of possible moves from current position based on self.type
-    # def possibleMoveList(self, currPos):
-    #     if (self.type == "King"):
-    #         pass
-    #     elif (self.type == "Queen"):
-    #         pass
-    #     elif (self.type == "Bishop"):
-    #         pass
-    #     elif (self.type == "Rook"):
-    #         pass
-    #     elif (self.type == "Knight"):
-    #         pass
+
+    def __str__ (self):
+        return "Piece is of type " + str(self.type) + " and is currently at " + str(self.currPos[0] + self.currPos[1])
 
 
 class Board:
@@ -62,7 +52,7 @@ class Board:
         for i in range (0, 2 * self.state.rows + 2):
             boardColsRep = []
             if (i%2 == 0):    
-                for j in range (0, 3 + self.state.cols * 4):
+                for j in range (0, 4 + self.state.cols * 4):
                     boardColsRep.append("-")            
             elif (i % 2 == 1 and i != 2 * self.state.rows + 1):
                 # print("j = {}".format(j))
@@ -129,12 +119,6 @@ class State:
         if (self.numObstacles > 0):
             self.splitCoordsAndEditBoardRep(lines[3], 38, 0, False, "X")
 
-        # for updating self.boardRep with start position
-        # if (len(lines[-2]) > 0):
-        #     self.splitCoordsAndEditBoardRep(lines[-2]
-        #                                     .split(",")[-1]
-        #                                     .split("]")[0], 0, 0, False, "S")
-
         # for updating self.boardRep with goal position(s)
         if (len(lines[-1][31:]) > 0):
             self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
@@ -160,7 +144,7 @@ class State:
         
         self.splitCoordsAndEditBoardRep(self.posStr, 0, 1, True, self.pathCostList)
 
-        # updating enemy piece type and position
+        # establish enemy piece type and position, and spawn in enemy objects
         startOfEnemyPieceList = endOfPathCostList
         enemyPieceList = lines[startOfEnemyPieceList][66::].replace("\n","").split(" ")
         numberOfEnemyPieces = 0
@@ -183,11 +167,18 @@ class State:
             if (pieceType == "Rook"):
                 enemyPieces.append("R")
             if (pieceType == "Knight"):
-                enemyPieces.append("H")   
+                enemyPieces.append("H")
+
+            enemyStartPos = []
+            enemyStartPos.append(list(enemyPiecesLocation)[0])
+            enemyStartPos.append(list(enemyPiecesLocation)[1])
+            enemy = Piece(pieceType, enemyStartPos)
+            print(enemy.__str__())
+
+            enemyPieces = []
+            enemyPiecesLocation = ""
 
         self.splitCoordsAndEditBoardRep(enemyPiecesLocation, 0, 0, True, enemyPieces)
-        
-        # instantiating enemy pieces
 
         # updating own piece type and position
         startOfOwnPieceList = startOfEnemyPieceList + 2 + numberOfEnemyPieces
@@ -235,6 +226,11 @@ class State:
                 tempList[tuplePos] = input
             self.boardRep[row][col] = tuple(tempList)
 
+    def isValid (self, coord):
+        return (coord[0] >= 0 and coord[0] <= self.rows and
+                coord[1] >= 0 and coord[1] <= self.cols)
+
+
 def search():
     pass
 
@@ -255,9 +251,6 @@ def run_AStar():
 if __name__ == "__main__":
 
     # run_AStar()
-    # boardRows = int(input("Rows: "))
-    # boardCols = int(input("Cols: "))
-    # numObstacles = int(input("Number of obstacles: "))
 
     state = State(sys.argv[1])
     board = Board(state)
