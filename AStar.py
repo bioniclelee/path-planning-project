@@ -55,9 +55,7 @@ class Piece:
                 if (directionMag == 1):
                     tempList.append(self.currPos[0] - 1) # row
                     tempList.append(int(self.currPos[1])) # col
-                    print(tempList)
                     threatenedSpacesList.append(tempList)
-                    print("threatenedSpacesList inside = {}".format(threatenedSpacesList))
                 elif (directionMag == 2):
                     for j in range (-self.currPos[0], rows - self.currPos[0]):
                         tempList = []
@@ -191,18 +189,14 @@ class Piece:
                             threatenedSpacesList.append(tempList)
             elif (i == 8):
                 for j in range (0, 2):
-                    print("j = {}".format(j))
                     coeff1 = (-1) ** j
-                    print("coeff1 = {}".format(coeff1))
                     
                     # vertical L-path
                     for k in range (0, 2):
                         coeff2 = (-1) ** k
-                        print("k = {}".format(k))
                         tempList = []
                         tempList.append(self.currPos[0] + coeff1 * 2) # row
                         tempList.append(int(self.currPos[1]) + coeff2 * 1) # col
-                        print("tempList for knight = {}".format(tempList))
                         threatenedSpacesList.append(tempList)
                     
                     # horizontal L-path
@@ -211,13 +205,8 @@ class Piece:
                         tempList = []
                         tempList.append(self.currPos[0] + coeff1 * 1) # row
                         tempList.append(int(self.currPos[1]) + coeff2 * 2) # col
-                        print("tempList for knight = {}".format(tempList))
                         threatenedSpacesList.append(tempList)
-                pass
 
-            
-            print("threatenedSpacesList = {}".format(threatenedSpacesList))
-            
         return threatenedSpacesList
 
 class Board:
@@ -353,13 +342,12 @@ class State:
             enemyStartPos.append(list(enemyPiecesAndLocation[1])[0]) # col
             enemyStartPos.append(list(enemyPiecesAndLocation[1])[1]) # row
             enemy = Piece(pieceType, enemyStartPos)
-            print(enemy.__str__())
+            # print(enemy.__str__())
             enemyThreatenedSpaces = enemy.threatenedSpaces(self.rows, self.cols)
             for j in range (0, len(enemyThreatenedSpaces)):
                 spaceToCheck = []
                 spaceToCheck.append(enemyThreatenedSpaces[j][0])
                 spaceToCheck.append(enemyThreatenedSpaces[j][1])
-                print("spaceToCheck = {}".format(spaceToCheck))
                 if self.isValid(spaceToCheck):    
                     tempList = list(self.boardRep[spaceToCheck[0]][spaceToCheck[1]])
                     tempList[0] = "X"
@@ -416,7 +404,6 @@ class State:
     def isValid (self, coord):
         if (coord[0] >= 0 and coord[0] < self.rows and
                 coord[1] >= 0 and coord[1] < self.cols):
-                print("self.boardRep[coord[0]][coord[1]] = {}".format(coord[1]))
                 if (self.boardRep[coord[0]][coord[1]][0] != "X"):
                     return True
                     
@@ -431,18 +418,18 @@ def run_AStar():
 
     # You can code in here but you cannot remove this function or change the return type
     
-    # state = State(sys.argv[1])
-    # board = Board(state)
-    # board.printBoard()
-
-    moves, nodesExplored, pathCost= search() #For reference
-    return moves, nodesExplored, pathCost #Format to be returned
-
-if __name__ == "__main__":
-
-    # run_AStar()
-
     state = State(sys.argv[1])
     board = Board(state)
     board.printBoard()
+
+    # moves, nodesExplored, pathCost= search() #For reference
+    # return moves, nodesExplored, pathCost #Format to be returned
+
+if __name__ == "__main__":
+
+    run_AStar()
+
+    # state = State(sys.argv[1])
+    # board = Board(state)
+    # board.printBoard()
     
