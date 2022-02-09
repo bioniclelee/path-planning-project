@@ -47,8 +47,8 @@ class Piece:
     def threatenedSpaces(self, rows, cols):
         threatenedSpacesList = []
         for i in range (0, 9):
-            directionMag = self.moveDirectionMatrix[i]
             tempList = []
+            directionMag = self.moveDirectionMatrix[i]
             
             # move forward = rowIndex - 1
             if (i == 0):
@@ -58,8 +58,9 @@ class Piece:
                     print(tempList)
                     threatenedSpacesList.append(tempList)
                     print("threatenedSpacesList inside = {}".format(threatenedSpacesList))
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     for j in range (-self.currPos[0], rows - self.currPos[0]):
+                        tempList = []
                         tempList.append(self.currPos[0] - j) # row
                         tempList.append(int(self.currPos[1])) # col
                         threatenedSpacesList.append(tempList)
@@ -70,14 +71,16 @@ class Piece:
                     tempList.append(self.currPos[0] - 1) # row
                     tempList.append(int(self.currPos[1]) + 1) # col
                     threatenedSpacesList.append(tempList)
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     if (rows > cols):
                         for j in range (-self.currPos[1], cols - self.currPos[1]):
+                            tempList = []
                             tempList.append(self.currPos[0] - j) # row
                             tempList.append(int(self.currPos[1]) + j) # col
                             threatenedSpacesList.append(tempList)
                     else:
                         for j in range (-self.currPos[0], rows - self.currPos[0]):
+                            tempList = []
                             tempList.append(self.currPos[0] - j) # row
                             tempList.append(int(self.currPos[1]) + j) # col
                             threatenedSpacesList.append(tempList)
@@ -90,6 +93,7 @@ class Piece:
                     threatenedSpacesList.append(tempList)
                 if (directionMag == 2):
                     for j in range (-self.currPos[1], cols - self.currPos[1]):
+                        tempList = []
                         tempList.append(self.currPos[0]) # row
                         tempList.append(int(self.currPos[1]) + j) # col
                         threatenedSpacesList.append(tempList)
@@ -108,6 +112,7 @@ class Piece:
                             threatenedSpacesList.append(tempList)
                     else:
                         for j in range (-self.currPos[0], rows - self.currPos[0]):
+                            tempList = []
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1]) + j) # col
                             threatenedSpacesList.append(tempList)
@@ -118,14 +123,16 @@ class Piece:
                     tempList.append(self.currPos[0] + 1) # row
                     tempList.append(int(self.currPos[1])) # col
                     threatenedSpacesList.append(tempList)
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     if (rows > cols):
                         for j in range (-self.currPos[1], cols - self.currPos[1]):
+                            tempList = []
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1])) # col
                             threatenedSpacesList.append(tempList)
                     else:
                         for j in range (-self.currPos[0], rows - self.currPos[0]):
+                            tempList = []
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1])) # col
                             threatenedSpacesList.append(tempList)
@@ -136,14 +143,16 @@ class Piece:
                     tempList.append(self.currPos[0] + 1) # row
                     tempList.append(int(self.currPos[1]) - 1) # col
                     threatenedSpacesList.append(tempList)
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     if (rows > cols):                    
                         for j in range (-self.currPos[1], cols - self.currPos[1]):
+                            tempList = []
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1]) - j) # col
                             threatenedSpacesList.append(tempList)
                     else:
                         for j in range (-self.currPos[0], rows - self.currPos[0]):
+                            tempList = []
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1]) - j) # col
                             threatenedSpacesList.append(tempList)
@@ -154,8 +163,9 @@ class Piece:
                     tempList.append(self.currPos[0]) # row
                     tempList.append(int(self.currPos[1]) - 1) # col
                     threatenedSpacesList.append(tempList)
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     for j in range (-self.currPos[1], cols - self.currPos[1]):
+                        tempList = []
                         tempList.append(self.currPos[0]) # row
                         tempList.append(int(self.currPos[1]) - j) # col
                         threatenedSpacesList.append(tempList)
@@ -166,19 +176,45 @@ class Piece:
                     tempList.append(self.currPos[0] - 1) # row
                     tempList.append(int(self.currPos[1]) - 1) # col
                     threatenedSpacesList.append(tempList)
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     if (rows > cols):
                         for j in range (-self.currPos[1], cols - self.currPos[1]):
+                            tempList = []
                             tempList.append(self.currPos[0] - j) # row
                             tempList.append(int(self.currPos[1]) - j) # col
                             threatenedSpacesList.append(tempList)
                     else:
                         for j in range (-self.currPos[0], rows - self.currPos[0]):
+                            tempList = []
                             tempList.append(self.currPos[0] - j) # row
                             tempList.append(int(self.currPos[1]) - j) # col
                             threatenedSpacesList.append(tempList)
             elif (i == 8):
+                for j in range (0, 2):
+                    print("j = {}".format(j))
+                    coeff1 = (-1) ** j
+                    print("coeff1 = {}".format(coeff1))
+                    
+                    # vertical L-path
+                    for k in range (0, 2):
+                        coeff2 = (-1) ** k
+                        print("k = {}".format(k))
+                        tempList = []
+                        tempList.append(self.currPos[0] + coeff1 * 2) # row
+                        tempList.append(int(self.currPos[1]) + coeff2 * 1) # col
+                        print("tempList for knight = {}".format(tempList))
+                        threatenedSpacesList.append(tempList)
+                    
+                    # horizontal L-path
+                    for k in range (0, 2):
+                        coeff2 = (-1) ** k
+                        tempList = []
+                        tempList.append(self.currPos[0] + coeff1 * 1) # row
+                        tempList.append(int(self.currPos[1]) + coeff2 * 2) # col
+                        print("tempList for knight = {}".format(tempList))
+                        threatenedSpacesList.append(tempList)
                 pass
+
             
             print("threatenedSpacesList = {}".format(threatenedSpacesList))
             
@@ -314,8 +350,8 @@ class State:
                 enemyPieces.append("H")
 
             enemyStartPos = []
-            enemyStartPos.append(list(enemyPiecesLocation)[0]) # col
-            enemyStartPos.append(list(enemyPiecesLocation)[1]) # row
+            enemyStartPos.append(list(enemyPiecesAndLocation[1])[0]) # col
+            enemyStartPos.append(list(enemyPiecesAndLocation[1])[1]) # row
             enemy = Piece(pieceType, enemyStartPos)
             print(enemy.__str__())
             enemyThreatenedSpaces = enemy.threatenedSpaces(self.rows, self.cols)
@@ -327,7 +363,7 @@ class State:
                 if self.isValid(spaceToCheck):    
                     tempList = list(self.boardRep[spaceToCheck[0]][spaceToCheck[1]])
                     tempList[0] = "X"
-                    spaceToCheck = tuple(tempList)
+                    self.boardRep[spaceToCheck[0]][spaceToCheck[1]] = tuple(tempList)
 
         self.splitCoordsAndEditBoardRep(enemyPiecesLocation, 0, 0, True, enemyPieces)
 
@@ -378,9 +414,11 @@ class State:
             self.boardRep[row][col] = tuple(tempList)
 
     def isValid (self, coord):
-        if (coord[0] >= 0 and coord[0] <= self.rows and
-                coord[1] >= 0 and coord[1] <= self.cols):
-                return (self.boardRep[coord[0]][coord[1]](0) != "X")
+        if (coord[0] >= 0 and coord[0] < self.rows and
+                coord[1] >= 0 and coord[1] < self.cols):
+                print("self.boardRep[coord[0]][coord[1]] = {}".format(coord[1]))
+                if (self.boardRep[coord[0]][coord[1]][0] != "X"):
+                    return True
                     
 
 def search():
