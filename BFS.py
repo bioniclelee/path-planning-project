@@ -210,6 +210,9 @@ class Piece:
 
         return possibleMoveList
 
+    def move(self, newPos):
+        self.currPos = newPos
+
 class Board:
     def __init__(self, state):
         self.state = state
@@ -266,19 +269,17 @@ class Board:
 
 
 class State:
-
     def __init__(self, file):
         with open(file) as f:
             lines = f.readlines()
         lineCount = len(lines)
 
-        self.start = [] # pair of x, y coords
-        self.goal = []  # pair of x, y coords
+        self.start = None # pair of x, y coords
 
         self.rows = int("".join(lines[0][5:]))
         self.cols = int("".join(lines[1][5:]))
 
-        self.boardRep = [[(" ", 1) for j in range(self.cols)] 
+        self.boardRep = [[(" ", 1, False) for j in range(self.cols)] 
                         for i in range(self.rows)]
 
         # for updating self.boardRep with obstacle positions
@@ -290,7 +291,7 @@ class State:
         if (len(lines[-1][31:]) > 0):
             self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
 
-        # Counting lines for end of pathCost list
+        # counting lines for end of pathCost list
         endOfPathCostList = 0
         for i in range (4, lineCount):
             firstWord = (lines[i].split(" "))[0]
@@ -353,37 +354,42 @@ class State:
 
         self.splitCoordsAndEditBoardRep(enemyPiecesLocation, 0, 0, True, enemyPieces)
 
-        # updating own piece type and position
-        startOfOwnPieceList = startOfEnemyPieceList + 2 + numberOfEnemyPieces
-        ownPieceList = lines[startOfOwnPieceList][64::].replace("\n","").split(" ")
-        numberOfOwnPieces = 0
-        for i in range (0, len(ownPieceList)):
-            numberOfOwnPieces += int(ownPieceList[i])
+        # establish ally piece type and position
+        startOfallyPieceList = startOfEnemyPieceList + 2 + numberOfEnemyPieces
+        allyPieceList = lines[startOfallyPieceList][64::].replace("\n","").split(" ")
+        numberOfallyPieces = 0
+        for i in range (0, len(allyPieceList)):
+            numberOfallyPieces += int(allyPieceList[i])
 
-        ownPieces = []
-        ownPiecesLocation = ""
-        for i in range (startOfOwnPieceList + 2, startOfOwnPieceList + 2 + numberOfOwnPieces):
+        allyPieces = []
+        allyPiecesLocation = ""
+        for i in range (startOfallyPieceList + 2, startOfallyPieceList + 2 + numberOfallyPieces):
             
-            ownPiecesAndLocation = lines[i].replace("[","").replace("]","").replace("\n","").split(",")
-            ownPiecesLocation += ownPiecesAndLocation[1]
-            ownPiecesLocation += " "
+            allyPiecesAndLocation = lines[i].replace("[","").replace("]","").replace("\n","").split(",")
+            allyPiecesLocation += allyPiecesAndLocation[1]
+            allyPiecesLocation += " "
             
-            pieceType = ownPiecesAndLocation[0]
+            pieceType = allyPiecesAndLocation[0]
             if (pieceType == "King"):
-                ownPieces.append("Z")
+                allyPieces.append("Z")
             if (pieceType == "Queen"):
-                ownPieces.append("X")
+                allyPieces.append("X")
             if (pieceType == "Bishop"):
-                ownPieces.append("C")
+                allyPieces.append("C")
             if (pieceType == "Rook"):
-                ownPieces.append("V")
+                allyPieces.append("V")
             if (pieceType == "Knight"):
-                ownPieces.append("B")   
+                allyPieces.append("B")
+            
+            allyStartPos = []
+            allyStartPos.append(list(allyPiecesAndLocation[1])[0]) # col
+            allyStartPos.append(list(allyPiecesAndLocation[1])[1]) # row
+            self.ally = Piece(pieceType, allyStartPos)
 
-        self.splitCoordsAndEditBoardRep(ownPiecesLocation, 0, 0, True, ownPieces)
+        self.splitCoordsAndEditBoardRep(allyPiecesLocation, 0, 0, True, allyPieces)
         
         # storing start position
-        startPosList = re.split("(\d+)", ownPiecesLocation.replace(" ", ""))
+        startPosList = re.split("(\d+)", allyPiecesLocation.replace(" ", ""))
 
         for i in range (0, len(startPosList) - 1, 2):
             row = int(startPosList[i+1])
@@ -391,26 +397,47 @@ class State:
             startPos = []
             startPos.append(row)
             startPos.append(col)
-            self.start.append(startPos)
+            self.start = startPos
             
         self.totPathCost = 0
         self.path = []
-        self.nodesExplored = []
+        self.nodesExplored = 0
+        self.puzzleComplete = False
+        self.queue = []
     
     # generation of adjacency matrix for piece at its current position
-    def genAdjMatrix(self, piece):
+    def genAdjMatrix(self, pos):
         adjMatrix=[]
         for i in range (-1, 2):
             coord = []
-            coord.append(piece.currPos[0] + i) # row
+            coord.append(pos[0] + i) # row
             for j in range (-1, 2):
-                coord.append(piece.currPos[1] + j) # col
-                if not (i == 0 and j == 0) and self.isValid(coord):
+                coord.append(pos[1] + j) # col
+                if not (i == 0 and j == 0) and self.isValid(coord) and (not self.isVisited(coord)):
                     adjMatrix.append(coord)
         return adjMatrix
     
-    def updateState(self, piece, oldPos, newPos):
-        pass
+    def movePiece(self, piece, newPos):
+        currPos = piece.currPos
+        self.nodesExplored += 1 # increment number of nodesExplored
+        move = []
+        formattedCurrPos = (chr(currPos[1] + ord('a')), currPos[0])
+        formattedNewPos = (chr(newPos[1] + ord('a')), newPos[0])
+        move.append(formattedCurrPos)
+        move.append(formattedNewPos)
+        self.path.append()
+        tempList = list(self.boardRep[currPos[0]][currPos[1]])
+        tempList[0] = "O" # updated for pritning on board
+        self.totPathCost += tempList[1] # update cumulative path cost
+        # tempList[2] = True # update visited status
+        self.boardRep[currPos[0]][currPos[1]] = tuple(tempList)
+        piece.move(newPos)
+
+    def visitSquare(self,currPos):
+        self.nodesExplored += 1 # increment number of nodesExplored
+        print ("self.boardRep[currPos[0]][currPos[1]] = {}".format(self.boardRep[currPos[0]][currPos[1]]))
+        tempList = list(self.boardRep[currPos[0]][currPos[1]])
+        tempList[2] = True # update visited status
 
     def splitCoordsAndEditBoardRep(self, str, sliceInd, tuplePos, isList, input):
         newList = re.split("(\d+)", str[sliceInd:].replace(" ", ""))
@@ -430,10 +457,57 @@ class State:
                 coord[1] >= 0 and coord[1] < self.cols):
                 if (self.boardRep[coord[0]][coord[1]][0] != "X"):
                     return True
+    def isGoal(self, coord):
+        return self.boardRep[coord[0]][coord[1]][0] == "G"
+
+    def isVisited(self, coord):
+        return self.boardRep[coord[0]][coord[1]][2]
+
+    def isComplete(self):
+        return self.puzzleComplete
+    
+    def setComplete(self):
+        self.puzzleComplete = True
 
 
-def search():
-    pass
+def search(state, posToSearch):
+
+    state.queue.append(posToSearch)
+    state.visitSquare(posToSearch)
+
+    while state.queue and not state.isComplete():
+        
+        # base case
+        if state.isGoal(posToSearch):
+            state.setComplete()
+            # return search(state, posToSearch)
+        # recursive case
+        else:
+            state.queue = (pop(state.queue))[1]
+            adjMat = state.genAdjMatrix(posToSearch)
+            for i in range (0, len(adjMat)):
+                if not state.isVisited(adjMat[i]):
+                    state.queue.append(adjMat[i])
+            
+            posToSearch = (pop(state.queue))[0]
+        return search(state, posToSearch)
+    
+    if state.isComplete():
+        state.movePiece(state.ally,posToSearch)
+        return state, posToSearch
+    
+    return state, None
+    
+
+def pop(list):
+    newList = []
+    if len(list) > 0:
+        head = list[0]
+        for i in range (1, len(list)):
+            newList.append(list[i])
+    else:
+        head = None
+    return head, newList
 
 
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
@@ -445,5 +519,16 @@ def run_BFS():
     board = Board(state)
     board.printBoard()
 
-    moves, nodesExplored = search(state) #For reference
-    return moves, nodesExplored #Format to be returned
+    state, pos = search(state, state.ally.currPos) #For reference
+    if pos == None:
+        return False
+    return state.path, state.nodesExplored #Format to be returned
+
+if __name__ == "__main__":
+
+    run_BFS()
+
+    # state = State(sys.argv[1])
+    # board = Board(state)
+    # board.printBoard()
+    
