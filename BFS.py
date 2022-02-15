@@ -2,6 +2,7 @@
 import re
 import sys
 from tracemalloc import start
+from turtle import pos
 
 # Helper functions to aid in your implementation. Can edit/remove
 class Piece:
@@ -281,11 +282,19 @@ class State:
 
         self.boardRep = [[(" ", 1, False) for j in range(self.cols)] 
                         for i in range(self.rows)]
+        self.pred = [[-1 for j in range(self.cols)] 
+                        for i in range(self.rows)]
 
         # for updating self.boardRep with obstacle positions
         self.numObstacles = int("".join(lines[2][20:]))
         if (self.numObstacles > 0):
             self.splitCoordsAndEditBoardRep(lines[3], 38, 0, False, "X")
+
+        self.totPathCost = 0
+        self.orderOfNodes = []
+        self.numNodesExplored = 0
+        self.puzzleComplete = False
+        self.queue = []
 
         # for updating self.boardRep with goal position(s)
         if (len(lines[-1][31:]) > 0):
@@ -382,11 +391,24 @@ class State:
                 allyPieces.append("B")
             
             allyStartPos = []
-            allyStartPos.append(list(allyPiecesAndLocation[1])[0]) # col
-            allyStartPos.append(list(allyPiecesAndLocation[1])[1]) # row
+            # print("allyPiecesAndLocation[1] = {}".format(allyPiecesAndLocation[1]))
+            newList = re.split("(\d+)", allyPiecesLocation.replace(" ", ""))
+            print(newList)
+
+            for i in range (0, len(newList) - 1, 2):
+                row = int(newList[i+1])
+                # print("row = {}".format(row))
+                col = newList[i]
+                # print("col = {}".format(col))
+            allyStartPos.append(col) # col
+            allyStartPos.append(row) # row
+            # print("allyStartPos = {}".format(allyStartPos))
             self.ally = Piece(pieceType, allyStartPos)
 
+        print(allyPiecesLocation)
         self.splitCoordsAndEditBoardRep(allyPiecesLocation, 0, 0, True, allyPieces)
+        self.visitSquare(self.ally.currPos)
+        self.queue.append(self.ally.currPos) # row, col
         
         # storing start position
         startPosList = re.split("(\d+)", allyPiecesLocation.replace(" ", ""))
@@ -398,53 +420,57 @@ class State:
             startPos.append(row)
             startPos.append(col)
             self.start = startPos
-            
-        self.totPathCost = 0
-        self.path = []
-        self.nodesExplored = 0
-        self.puzzleComplete = False
-        self.queue = []
     
     # generation of adjacency matrix for piece at its current position
     def genAdjMatrix(self, pos):
+        # print("pos in genAdjMatrix = {}".format(pos))
         adjMatrix=[]
         for i in range (-1, 2):
-            coord = []
-            coord.append(pos[0] + i) # row
             for j in range (-1, 2):
+                coord = []
+                coord.append(pos[0] + i) # row
+                # print("pos[0] + i = {}".format(pos[0] + i))
                 coord.append(pos[1] + j) # col
+                # print("coord.append(pos[1] + j) = {}".format(coord.append(pos[1] + j)))
                 if not (i == 0 and j == 0) and self.isValid(coord) and (not self.isVisited(coord)):
+                    # print("coord = {}".format(coord))
                     adjMatrix.append(coord)
         return adjMatrix
     
     def movePiece(self, piece, newPos):
         currPos = piece.currPos
-        self.nodesExplored += 1 # increment number of nodesExplored
         move = []
         formattedCurrPos = (chr(currPos[1] + ord('a')), currPos[0])
         formattedNewPos = (chr(newPos[1] + ord('a')), newPos[0])
         move.append(formattedCurrPos)
         move.append(formattedNewPos)
-        self.path.append()
         tempList = list(self.boardRep[currPos[0]][currPos[1]])
         tempList[0] = "O" # updated for pritning on board
-        self.totPathCost += tempList[1] # update cumulative path cost
+        self.totPathCost += int(tempList[1]) # update cumulative path cost
         # tempList[2] = True # update visited status
         self.boardRep[currPos[0]][currPos[1]] = tuple(tempList)
         piece.move(newPos)
 
-    def visitSquare(self,currPos):
-        self.nodesExplored += 1 # increment number of nodesExplored
-        print ("self.boardRep[currPos[0]][currPos[1]] = {}".format(self.boardRep[currPos[0]][currPos[1]]))
-        tempList = list(self.boardRep[currPos[0]][currPos[1]])
+    def visitSquare(self, currPos):
+        self.numNodesExplored += 1 # increment numnodesExplored
+        # print ("self.boardRep[currPos[0]][currPos[1]] = {}".format(self.boardRep[currPos[0]][currPos[1]]))
+        # print(self.boardRep[currPos[0]][currPos[1]])
+        temp = self.boardRep[currPos[0]][currPos[1]]
+        tempList = list(temp)
+        # print(type(tempList))
         tempList[2] = True # update visited status
+        self.boardRep[currPos[0]][currPos[1]] = tuple(tempList)
+        # print("{} has been visited".format(currPos))
 
     def splitCoordsAndEditBoardRep(self, str, sliceInd, tuplePos, isList, input):
         newList = re.split("(\d+)", str[sliceInd:].replace(" ", ""))
+        # print(newList)
 
         for i in range (0, len(newList) - 1, 2):
             row = int(newList[i+1])
+            # print("row = {}".format(row))
             col = ord(newList[i]) - ord("a")
+            # print("col = {}".format(col))
             tempList = list(self.boardRep[row][col])
             if isList:
                 tempList[tuplePos] = input[int(i/2)]
@@ -455,10 +481,11 @@ class State:
     def isValid (self, coord):
         if (coord[0] >= 0 and coord[0] < self.rows and
                 coord[1] >= 0 and coord[1] < self.cols):
-                if (self.boardRep[coord[0]][coord[1]][0] != "X"):
+                if (self.boardRep[coord[0]][coord[1]][0] == " " or self.boardRep[coord[0]][coord[1]][0] == "G"):
                     return True
+    
     def isGoal(self, coord):
-        return self.boardRep[coord[0]][coord[1]][0] == "G"
+        return (self.boardRep[coord[0]][coord[1]][0] == "G")
 
     def isVisited(self, coord):
         return self.boardRep[coord[0]][coord[1]][2]
@@ -472,57 +499,67 @@ class State:
 
 def search(state, posToSearch):
 
-    state.queue.append(posToSearch)
-    state.visitSquare(posToSearch)
-
-    while state.queue and not state.isComplete():
+    while state.queue:
         
-        # base case
-        if state.isGoal(posToSearch):
-            state.setComplete()
-            # return search(state, posToSearch)
-        # recursive case
-        else:
-            state.queue = (pop(state.queue))[1]
-            adjMat = state.genAdjMatrix(posToSearch)
-            for i in range (0, len(adjMat)):
-                if not state.isVisited(adjMat[i]):
-                    state.queue.append(adjMat[i])
+        posToSearch = state.queue[0]
+        print("state.queue = {}".format(state.queue))
+        state.queue = pop(state.queue)
+        # print("generating adjacency matrix")
+        adjMat = state.genAdjMatrix(posToSearch)
+        # print("adjMat = {}".format(adjMat))
+        for i in range (0, len(adjMat)):
             
-            posToSearch = (pop(state.queue))[0]
-        return search(state, posToSearch)
+            if not state.isVisited(adjMat[i]):
+                print("{} has not been visited".format(adjMat[i]))
+                state.visitSquare(adjMat[i])
+                state.pred[adjMat[i][0]][adjMat[i][1]] = posToSearch
+                state.queue.append(adjMat[i])
+
+                if state.isGoal(adjMat[i]):
+                    print("goal is at {}".format(adjMat[i]))
+                    goalTile = adjMat[i]
+                    state.setComplete()
     
-    if state.isComplete():
-        state.movePiece(state.ally,posToSearch)
-        return state, posToSearch
-    
-    return state, None
-    
+    crawl = goalTile # this should be the goal tile
+    while (state.pred[crawl[0]][crawl[1]] != -1):
+        state.orderOfNodes.append(state.pred[crawl[0]][crawl[1]])
+        state.movePiece(state.ally, crawl)
+        print("crawl = {}".format(crawl))
+        crawl = state.pred[crawl[0]][crawl[1]]
+
+    return state.orderOfNodes, state.numNodesExplored
+
 
 def pop(list):
     newList = []
     if len(list) > 0:
-        head = list[0]
         for i in range (1, len(list)):
             newList.append(list[i])
-    else:
-        head = None
-    return head, newList
+    return newList
 
 
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
-# To return: List of moves and nodes explored
+# To return: List of moves and numNodesExplored explored
 def run_BFS():
     # You can code in here but you cannot remove this function or change the return type
     
     state = State(sys.argv[1])
     board = Board(state)
-    board.printBoard()
 
-    state, pos = search(state, state.ally.currPos) #For reference
-    if pos == None:
-        return False
-    return state.path, state.nodesExplored #Format to be returned
+    print("state.ally.currPos = {}".format(state.ally.currPos))
+    state.orderOfNodes, state.numNodesExplored = search(state, state.ally.currPos) #For reference
+    state.orderOfNodes = state.orderOfNodes[::-1]
+    path = []
+    for i in range(len(state.orderOfNodes) - 1):
+        srcDestPair = []
+        print("state.orderOfNodes[i] = {}".format(state.orderOfNodes[i]))
+        srcDestPair.append(tuple(state.orderOfNodes[i]))
+        srcDestPair.append(tuple(state.orderOfNodes[i + 1]))
+        path.append(srcDestPair)
+    
+    board.printBoard()
+    # print("path = {}".format(path))
+    return path, state.numNodesExplored # Format to be returned
 
 if __name__ == "__main__":
 
