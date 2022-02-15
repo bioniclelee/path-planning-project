@@ -2,7 +2,6 @@
 import re
 import sys
 from tracemalloc import start
-from turtle import pos
 
 # Helper functions to aid in your implementation. Can edit/remove
 class Piece:
