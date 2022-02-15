@@ -1,0 +1,19 @@
+Rows:8
+Cols:8
+Number of Obstacles:11
+Position of Obstacles (space between):a1 b1 c1 d1 c3 d3 e3 f5 g5 f6 g6
+Step cost to move to selected grids (Default cost is 1) [Pos, Cost]:
+[e0,2]
+[e1,2]
+[e2,2]
+[e3,2]
+[e4,2]
+[e5,5]
+Number of Enemy King, Queen, Bishop, Rook, Knight (space between):2 0 0 0 0
+Position of Enemy Pieces:
+[King,a3]
+[King,d5]
+Number of Own King, Queen, Bishop, Rook, Knight (space between):1 0 0 0 0
+Starting Position of Pieces [Piece, Pos]:
+[King,a0]
+Goal Positions (space between):h7
