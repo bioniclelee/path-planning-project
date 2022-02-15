@@ -19,23 +19,23 @@ class Piece:
         # 9 for knight movement
         # cell value: 0 = no movement, 1 = 1 step, 2 = unlimited movement
         if (self.type == "King"):
-            for i in range (0, 9):
+            for i in range (0, 8):
                 self.moveDirectionMatrix.append(1)
             self.moveDirectionMatrix.append(0)
         elif (self.type == "Queen"):
-            for i in range (0, 9):
+            for i in range (0, 8):
                 self.moveDirectionMatrix.append(2)
             self.moveDirectionMatrix.append(0)
         elif (self.type == "Bishop"):
-            for i in range (1, 9, 2):
+            for i in range (1, 8, 2):
                 self.moveDirectionMatrix.append(2)
             self.moveDirectionMatrix.append(0)
         elif (self.type == "Rook"):
-            for i in range (0, 9, 2):
+            for i in range (0, 8, 2):
                 self.moveDirectionMatrix.append(2)
             self.moveDirectionMatrix.append(0)
         elif (self.type == "Knight"):
-            for i in range (0, 9):
+            for i in range (0, 8):
                 self.moveDirectionMatrix.append(0)
             self.moveDirectionMatrix.append(1)
 
@@ -61,6 +61,7 @@ class Piece:
                         tempList.append(self.currPos[0] - j) # row
                         tempList.append(int(self.currPos[1])) # col
                         possibleMoveList.append(tempList)
+                # print("forward moveList = {}".format(possibleMoveList))
             
             # move diagonal right up = rowInd - 1 && colInd + 1
             elif (i == 1):
@@ -81,6 +82,7 @@ class Piece:
                             tempList.append(self.currPos[0] - j) # row
                             tempList.append(int(self.currPos[1]) + j) # col
                             possibleMoveList.append(tempList)
+                # print("diagonal right up moveList = {}".format(possibleMoveList))
 
             # move right = colInd + 1
             elif (i == 2):
@@ -88,12 +90,13 @@ class Piece:
                     tempList.append(self.currPos[0]) # row
                     tempList.append(int(self.currPos[1]) + 1) # col
                     possibleMoveList.append(tempList)
-                if (directionMag == 2):
+                elif (directionMag == 2):
                     for j in range (-self.currPos[1], cols - self.currPos[1]):
                         tempList = []
                         tempList.append(self.currPos[0]) # row
                         tempList.append(int(self.currPos[1]) + j) # col
                         possibleMoveList.append(tempList)
+                # print("right moveList = {}".format(possibleMoveList))
 
             # move diagonal right down = rowInd + 1 && colInd + 1
             elif (i == 3):
@@ -113,8 +116,9 @@ class Piece:
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1]) + j) # col
                             possibleMoveList.append(tempList)
+                # print("digaonal right down moveList = {}".format(possibleMoveList))
 
-            # move left = colInd - 1
+            # move down = rowInd + 1
             elif (i == 4):
                 if (directionMag == 1):
                     tempList.append(self.currPos[0] + 1) # row
@@ -133,6 +137,7 @@ class Piece:
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1])) # col
                             possibleMoveList.append(tempList)
+                # print("down moveList = {}".format(possibleMoveList))
 
             # move diagonal left down = rowInd + 1 && colInd - 1
             elif (i == 5):
@@ -153,6 +158,7 @@ class Piece:
                             tempList.append(self.currPos[0] + j) # row
                             tempList.append(int(self.currPos[1]) - j) # col
                             possibleMoveList.append(tempList)
+                # print("diagonal left down moveList = {}".format(possibleMoveList))
 
             # move left = colInd - 1
             elif (i == 6):
@@ -166,6 +172,7 @@ class Piece:
                         tempList.append(self.currPos[0]) # row
                         tempList.append(int(self.currPos[1]) - j) # col
                         possibleMoveList.append(tempList)
+                # print("left moveList = {}".format(possibleMoveList))
             
             # move diagonal left up = rowInd - 1 && colInd - 1
             elif (i == 7):
@@ -186,27 +193,30 @@ class Piece:
                             tempList.append(self.currPos[0] - j) # row
                             tempList.append(int(self.currPos[1]) - j) # col
                             possibleMoveList.append(tempList)
+                # print("diagonal left up moveList = {}".format(possibleMoveList))
             
             # move in L-shape (knights only)
             elif (i == 8):
-                for j in range (0, 2):
-                    coeff1 = (-1) ** j
-                    
-                    # vertical L-path
-                    for k in range (0, 2):
-                        coeff2 = (-1) ** k
-                        tempList = []
-                        tempList.append(self.currPos[0] + coeff1 * 2) # row
-                        tempList.append(int(self.currPos[1]) + coeff2 * 1) # col
-                        possibleMoveList.append(tempList)
-                    
-                    # horizontal L-path
-                    for k in range (0, 2):
-                        coeff2 = (-1) ** k
-                        tempList = []
-                        tempList.append(self.currPos[0] + coeff1 * 1) # row
-                        tempList.append(int(self.currPos[1]) + coeff2 * 2) # col
-                        possibleMoveList.append(tempList)
+                if (directionMag == 1):
+                    for j in range (0, 2):
+                        coeff1 = (-1) ** j
+                        
+                        # vertical L-path
+                        for k in range (0, 2):
+                            coeff2 = (-1) ** k
+                            tempList = []
+                            tempList.append(self.currPos[0] + coeff1 * 2) # row
+                            tempList.append(int(self.currPos[1]) + coeff2 * 1) # col
+                            possibleMoveList.append(tempList)
+                        
+                        # horizontal L-path
+                        for k in range (0, 2):
+                            coeff2 = (-1) ** k
+                            tempList = []
+                            tempList.append(self.currPos[0] + coeff1 * 1) # row
+                            tempList.append(int(self.currPos[1]) + coeff2 * 2) # col
+                            possibleMoveList.append(tempList)
+                    # print("L-shaped moveList = {}".format(possibleMoveList))
 
         return possibleMoveList
 
@@ -298,6 +308,9 @@ class State:
         # for updating self.boardRep with goal position(s)
         if (len(lines[-1][31:]) > 0):
             self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
+        else:
+            self.queue = []
+            self.puzzleComplete = True
 
         # counting lines for end of pathCost list
         endOfPathCostList = 0
@@ -351,11 +364,13 @@ class State:
             enemy = Piece(pieceType, enemyStartPos)
             # print(enemy.__str__())
             enemyThreatenedSpaces = enemy.possibleMoves(self.rows, self.cols)
+            # print("enemyThreatenedSpaces for piece {}: {}".format(enemy.type, enemyThreatenedSpaces))
             for j in range (0, len(enemyThreatenedSpaces)):
                 spaceToCheck = []
                 spaceToCheck.append(enemyThreatenedSpaces[j][0])
                 spaceToCheck.append(enemyThreatenedSpaces[j][1])
-                if self.isValid(spaceToCheck):    
+                if self.isValid(spaceToCheck):
+                    # print(spaceToCheck)
                     tempList = list(self.boardRep[spaceToCheck[0]][spaceToCheck[1]])
                     tempList[0] = "X"
                     self.boardRep[spaceToCheck[0]][spaceToCheck[1]] = tuple(tempList)
@@ -392,7 +407,7 @@ class State:
             allyStartPos = []
             # print("allyPiecesAndLocation[1] = {}".format(allyPiecesAndLocation[1]))
             newList = re.split("(\d+)", allyPiecesLocation.replace(" ", ""))
-            print(newList)
+            # print(newList)
 
             for i in range (0, len(newList) - 1, 2):
                 row = int(newList[i+1])
@@ -404,7 +419,7 @@ class State:
             # print("allyStartPos = {}".format(allyStartPos))
             self.ally = Piece(pieceType, allyStartPos)
 
-        print(allyPiecesLocation)
+        # print(allyPiecesLocation)
         self.splitCoordsAndEditBoardRep(allyPiecesLocation, 0, 0, True, allyPieces)
         self.visitSquare(self.ally.currPos)
         self.queue.append(self.ally.currPos) # row, col
@@ -421,8 +436,9 @@ class State:
             self.start = startPos
     
     # generation of adjacency matrix for piece at its current position
-    def genNeighbour(self, pos):
+    def genAdjMatrix(self, pos):
         # print("pos in genAdjMatrix = {}".format(pos))
+        adjMatrix=[]
         for i in range (-1, 2):
             for j in range (-1, 2):
                 coord = []
@@ -432,7 +448,15 @@ class State:
                 # print("coord.append(pos[1] + j) = {}".format(coord.append(pos[1] + j)))
                 if not (i == 0 and j == 0) and self.isValid(coord) and (not self.isVisited(coord)):
                     # print("coord = {}".format(coord))
-                    return coord
+                    adjMatrix.append(coord)
+        return adjMatrix[::-1]
+
+    def dfsAddToQueue(self, coord):
+        newQueue = []
+        newQueue.append(coord)
+        for i in range(len(self.queue)):
+            newQueue.append(self.queue[i])
+        self.queue = newQueue
     
     def movePiece(self, piece, newPos):
         currPos = piece.currPos
@@ -474,6 +498,11 @@ class State:
             else:
                 tempList[tuplePos] = input
             self.boardRep[row][col] = tuple(tempList)
+    
+    def finalPathFormat(self, coord):
+        first = chr(coord[1] + ord('a'))
+        second = coord[0]
+        return (first, second)
 
     def isValid (self, coord):
         if (coord[0] >= 0 and coord[0] < self.rows and
@@ -496,27 +525,34 @@ class State:
 
 def search(state, posToSearch):
 
-    # print("generating adjacency matrix")
-    adjMat = state.genAdjMatrix(posToSearch)
-    # print("adjMat = {}".format(adjMat))
+    while state.queue:
         
-    if not state.isVisited(adjMat[0]):
-        print("{} has not been visited".format(adjMat[0]))
-        state.visitSquare(adjMat[0])
-        state.pred[adjMat[0][0]][adjMat[0][1]] = posToSearch
-        state.queue.append(adjMat[0])
+        posToSearch = state.queue[0]
+        # print("state.queue = {}".format(state.queue))
+        state.queue = pop(state.queue)
+        # print("generating adjacency matrix")
+        adjMat = state.genAdjMatrix(posToSearch)
+        # print("adjMat = {}".format(adjMat))
+        for i in range (0, len(adjMat)):
+            
+            if not state.isVisited(adjMat[i]):
+                # print("{} has not been visited".format(adjMat[i]))
+                state.visitSquare(adjMat[i])
+                state.pred[adjMat[i][0]][adjMat[i][1]] = posToSearch
+                state.dfsAddToQueue(adjMat[i])
 
-        if state.isGoal(adjMat[0]):
-            print("goal is at {}".format(adjMat[0]))
-            goalTile = adjMat[0]
-            state.setComplete()
+                if state.isGoal(adjMat[i]):
+                    # print("goal is at {}".format(adjMat[i]))
+                    goalTile = adjMat[i]
+                    state.setComplete()
     
-    if state.isComplete():    
+    if state.isComplete():
         crawl = goalTile # this should be the goal tile
+        state.orderOfNodes.append(goalTile)
         while (state.pred[crawl[0]][crawl[1]] != -1):
+            # print("crawl = {}".format(crawl))
             state.orderOfNodes.append(state.pred[crawl[0]][crawl[1]])
             state.movePiece(state.ally, crawl)
-            print("crawl = {}".format(crawl))
             crawl = state.pred[crawl[0]][crawl[1]]
 
     return state.orderOfNodes, state.numNodesExplored
@@ -529,7 +565,6 @@ def pop(list):
             newList.append(list[i])
     return newList
 
-
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
 # To return: List of moves and nodes explored
 def run_DFS():
@@ -538,19 +573,24 @@ def run_DFS():
     state = State(sys.argv[1])
     board = Board(state)
 
-    print("state.ally.currPos = {}".format(state.ally.currPos))
+    # print("state.ally.currPos = {}".format(state.ally.currPos))
     state.orderOfNodes, state.numNodesExplored = search(state, state.ally.currPos) #For reference
     state.orderOfNodes = state.orderOfNodes[::-1]
+    # print("state.orderOfNodes = {}".format(state.orderOfNodes))
     path = []
     for i in range(len(state.orderOfNodes) - 1):
         srcDestPair = []
-        print("state.orderOfNodes[i] = {}".format(state.orderOfNodes[i]))
-        srcDestPair.append(tuple(state.orderOfNodes[i]))
-        srcDestPair.append(tuple(state.orderOfNodes[i + 1]))
+        # print("src = {}".format(state.orderOfNodes[i]))
+        src = state.finalPathFormat(state.orderOfNodes[i])
+        # print("dest = {}".format(state.orderOfNodes[i+1]))
+        dest = state.finalPathFormat(state.orderOfNodes[i+1])
+        srcDestPair.append(src)
+        srcDestPair.append(dest)
         path.append(srcDestPair)
     
-    board.printBoard()
+    # board.printBoard()
     # print("path = {}".format(path))
+    # print ((path, state.numNodesExplored))
     return path, state.numNodesExplored # Format to be returned
     
 if __name__ == "__main__":

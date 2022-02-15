@@ -142,4 +142,4 @@ Position of Enemy Pieces:-
 Number of Own King, Queen, Bishop, Rook, Knight (space between):1 0 0 0 0
 Starting Position of Pieces [Piece, Pos]:
 [King,a20]
-Goal Positions (space between):r4
+Goal Positions (space between):

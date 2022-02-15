@@ -308,6 +308,9 @@ class State:
         # for updating self.boardRep with goal position(s)
         if (len(lines[-1][31:]) > 0):
             self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
+        else:
+            self.queue = []
+            self.puzzleComplete = True
 
         # counting lines for end of pathCost list
         endOfPathCostList = 0
@@ -567,7 +570,7 @@ def run_BFS():
     # print("state.ally.currPos = {}".format(state.ally.currPos))
     state.orderOfNodes, state.numNodesExplored = search(state, state.ally.currPos) #For reference
     state.orderOfNodes = state.orderOfNodes[::-1]
-    print("state.orderOfNodes = {}".format(state.orderOfNodes))
+    # print("state.orderOfNodes = {}".format(state.orderOfNodes))
     path = []
     for i in range(len(state.orderOfNodes) - 1):
         srcDestPair = []
