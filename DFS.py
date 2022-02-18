@@ -306,11 +306,10 @@ class State:
         self.queue = []
 
         # for updating self.boardRep with goal position(s)
-        if (len(lines[-1][31:]) > 0):
+        if (len(lines[-1][31:]) > 0 and self.rows > 0 and self.cols > 0):
             self.splitCoordsAndEditBoardRep(lines[-1], 31, 0, False, "G")
         else:
             self.queue = []
-            self.puzzleComplete = True
 
         # counting lines for end of pathCost list
         endOfPathCostList = 0
@@ -369,7 +368,7 @@ class State:
                 spaceToCheck = []
                 spaceToCheck.append(enemyThreatenedSpaces[j][0])
                 spaceToCheck.append(enemyThreatenedSpaces[j][1])
-                if self.isValid(spaceToCheck):
+                if self.isValidEnemy(spaceToCheck):
                     # print(spaceToCheck)
                     tempList = list(self.boardRep[spaceToCheck[0]][spaceToCheck[1]])
                     tempList[0] = "X"
@@ -409,20 +408,20 @@ class State:
             newList = re.split("(\d+)", allyPiecesLocation.replace(" ", ""))
             # print(newList)
 
-            for i in range (0, len(newList) - 1, 2):
-                row = int(newList[i+1])
-                # print("row = {}".format(row))
-                col = newList[i]
-                # print("col = {}".format(col))
+            row = int(newList[1])
+            col = newList[0]
             allyStartPos.append(col) # col
             allyStartPos.append(row) # row
             # print("allyStartPos = {}".format(allyStartPos))
             self.ally = Piece(pieceType, allyStartPos)
 
         # print(allyPiecesLocation)
-        self.splitCoordsAndEditBoardRep(allyPiecesLocation, 0, 0, True, allyPieces)
-        self.visitSquare(self.ally.currPos)
-        self.queue.append(self.ally.currPos) # row, col
+        if (self.rows > 0 and self.cols > 0):
+            self.splitCoordsAndEditBoardRep(allyPiecesLocation, 0, 0, True, allyPieces)
+            self.visitSquare(self.ally.currPos)
+            self.queue.append(self.ally.currPos) # row, col
+        else:
+            self.queue = []
         
         # storing start position
         startPosList = re.split("(\d+)", allyPiecesLocation.replace(" ", ""))
@@ -450,13 +449,6 @@ class State:
                     # print("coord = {}".format(coord))
                     adjMatrix.append(coord)
         return adjMatrix[::-1]
-
-    def dfsAddToQueue(self, coord):
-        newQueue = []
-        newQueue.append(coord)
-        for i in range(len(self.queue)):
-            newQueue.append(self.queue[i])
-        self.queue = newQueue
     
     def movePiece(self, piece, newPos):
         currPos = piece.currPos
@@ -507,8 +499,11 @@ class State:
     def isValid (self, coord):
         if (coord[0] >= 0 and coord[0] < self.rows and
                 coord[1] >= 0 and coord[1] < self.cols):
-                if (self.boardRep[coord[0]][coord[1]][0] == " " or self.boardRep[coord[0]][coord[1]][0] == "G"):
-                    return True
+                    return self.boardRep[coord[0]][coord[1]][0] == " " or self.isGoal(coord)
+
+    def isValidEnemy(self,coord):
+        return (coord[0] >= 0 and coord[0] < self.rows and
+        coord[1] >= 0 and coord[1] < self.cols)
     
     def isGoal(self, coord):
         return (self.boardRep[coord[0]][coord[1]][0] == "G")
@@ -521,6 +516,13 @@ class State:
     
     def setComplete(self):
         self.puzzleComplete = True
+    
+    def dfsAddToQueue(self, coord):
+        newQueue = []
+        newQueue.append(coord)
+        for i in range(len(self.queue)):
+            newQueue.append(self.queue[i])
+        self.queue = newQueue
 
 
 def search(state, posToSearch):
@@ -548,12 +550,13 @@ def search(state, posToSearch):
     
     if state.isComplete():
         crawl = goalTile # this should be the goal tile
+        state.movePiece(state.ally, goalTile)
         state.orderOfNodes.append(goalTile)
         while (state.pred[crawl[0]][crawl[1]] != -1):
             # print("crawl = {}".format(crawl))
-            state.orderOfNodes.append(state.pred[crawl[0]][crawl[1]])
-            state.movePiece(state.ally, crawl)
             crawl = state.pred[crawl[0]][crawl[1]]
+            state.movePiece(state.ally, crawl)
+            state.orderOfNodes.append(crawl)
 
     return state.orderOfNodes, state.numNodesExplored
 
@@ -588,7 +591,7 @@ def run_DFS():
         srcDestPair.append(dest)
         path.append(srcDestPair)
     
-    # board.printBoard()
+    board.printBoard()
     # print("path = {}".format(path))
     # print ((path, state.numNodesExplored))
     return path, state.numNodesExplored # Format to be returned
