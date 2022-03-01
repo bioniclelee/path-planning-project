@@ -301,24 +301,25 @@ def getHeuristic(coord):
     global board
     global goalList
     heuristic = 0
-    minVal = 0
+    minVal = math.inf
     for goal in goalList:
-        i = goal[0] - coord[0]
-        j = goal[1] - coord[1]
-        while i < goal[0] or j < goal[1]:
-            heuristic += 1
-            i += 1
-            j += 1
-        if (i == goal[0]):
-            heuristic += (goal[1] - j)
-        if (j == goal[1]):
-            heuristic += (goal[0] - i)
+        heuristic = abs(goal[0] - coord[0]) + abs(goal[1] - coord[1]) + ((goal[0] - coord[0]) ** 2 + (goal[1] - coord[1]) ** 2) ** 0.5
+        # i = goal[0] - coord[0]
+        # j = goal[1] - coord[1]
+        # while i < goal[0] or j < goal[1]:
+        #     heuristic += 1
+        #     i += 1
+        #     j += 1
+        # if (i == goal[0]):
+        #     heuristic += (goal[1] - j)
+        # if (j == goal[1]):
+        #     heuristic += (goal[0] - i)
         # heuristic = abs(goal[0] - coord[0]) + abs(goal[1] - coord[1])
         # min((abs(goal[0] - coord[0]), abs(goal[1] - coord[1])))
         # ((goal[0] - coord[0]) ** 2 + (goal[1] - coord[1]) ** 2) ** 0.5
-        # if heuristic < minVal:
-        #     minVal = heuristic
-    return heuristic
+        if heuristic < minVal:
+            minVal = heuristic
+    return minVal
 
 def search():
     global queue
