@@ -311,9 +311,9 @@ def search():
         if len(queue) == k:
             # for elem in queue:
                 # print("score for {} = {}".format(elem[1], elem[0]))
-            print("entering remove")
+            # print("entering remove")
             counter += 1
-            print("counter = {}".format(counter))
+            # print("counter = {}".format(counter))
             
             tempPieceList = []
             tempPiecePosList = []
@@ -322,7 +322,7 @@ def search():
                 tempPiecePosList.append(piecePosList[i])
 
             if -1 < counter < len(pieceList):
-                print("tempPieceList[{}] = {}".format(counter, tempPieceList[counter]))
+                # print("tempPieceList[{}] = {}".format(counter, tempPieceList[counter]))
                 del tempPieceList[counter]
                 del tempPiecePosList[counter]
                 
@@ -334,7 +334,7 @@ def search():
             # print("length of queue in remove = {}".format(len(queue)))
 
         pieceScore, pieceType, piecePos = hq.heappop(queue)
-        print("{} at {} with score {} is removed".format(pieceType, piecePos, pieceScore))
+        # print("{} at {} with score {} is removed".format(pieceType, piecePos, pieceScore))
         removePiece(piecePos)
 
         h = 0
@@ -353,6 +353,7 @@ def search():
             # print("pieceThreatList = {}".format(pieceThreatList))
             # print("pieceType = {}".format(pieceType))
             pieceType, piecePos, pieceThreatList = tempPieceList[i]
+            print("pushing {} at {} with score = {}".format(pieceType, piecePos,getScore(tempPiecePosList, pieceThreatList)))
             hq.heappush(queue, (-1 * getScore(tempPiecePosList, pieceThreatList), pieceType, piecePos))
             if (pieceType == "Knight"):
                 pieceRepr = "H"
@@ -362,29 +363,30 @@ def search():
 
         if counter == len(piecePosList) -1 and len(queue) == k and not isComplete():
             # print("length of queue = {}".format(len(queue)))
-            return None
+            return queue
     return queue
 
 def run_local():
     dict = {}
-
     parseFile(sys.argv[1])
     
+    print("before search:")
+    printBoard(board)
     result = search()
 
     if result == None:
         return result
-        # print("sadj")
 
     while queue:
         pieceScore, pieceType, piecePos = hq.heappop(queue)
-        print("{} at {} with score {} remains".format(pieceType, piecePos, pieceScore))
+        # print("{} at {} with score {} remains".format(pieceType, piecePos, pieceScore))
         coordString = coordToStrIntTuple(piecePos)
         newCoord = []
         newCoord.append(coordString[0])
         newCoord.append(int(coordString[1]))
         dict[tuple(newCoord)] = pieceType
 
+    print("\nAfter search")
     printBoard(board)
     print(dict)
     
