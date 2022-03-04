@@ -2,7 +2,8 @@ import sys
 import re
 import heapq as hq
 import math
- 
+import random
+
 rows = 0
 cols = 0
 k = 0
@@ -10,24 +11,24 @@ board = []
 queue = []
 piecePosList = []
 pieceList = []
- 
+
 # class Piece:
- 
+
 #     pos = 0
 #     type = None
 #     threatList = None
- 
+
 #     def __init__(self, pos, type, threatList):
 #         self.pos = pos
 #         self.type = type
 #         self.threatList = threatList  
- 
- 
+
+
 def parseFile(file):
     global rows
     global cols
     global board
- 
+
     with open(file) as f:
         lines = f.readlines()
     
@@ -38,7 +39,7 @@ def parseFile(file):
     insertObstacles(lines)
     insertK(lines)
     insertPieces(lines)
- 
+
 def insertK(lines):
     global k
     k = int(lines[4].split(":")[1])
@@ -50,7 +51,7 @@ def insertPieces(lines):
     numPieces = 0
     for n in list((lines[5].rstrip("\n").split(":"))[1].split(" ")):
         numPieces += int(n)
- 
+
     lineNum = 7
     while lineNum < len(lines):
         threatList = []
@@ -78,9 +79,9 @@ def insertPieces(lines):
         board[coord[0]][coord[1]][0] = enemyBoardInput
         
         pieceList.append((rawEntry[0], coord, threatList))
- 
+
         lineNum += 1
- 
+
 def enemyKingThreat(pos):
     threatList = []
     row = pos[0]
@@ -91,10 +92,10 @@ def enemyKingThreat(pos):
                 threatList.append(rowColToCoord(row + i, col + j))
     threatList.remove(rowColToCoord(row, col))
     return threatList
- 
+
 def enemyQueenThreat(pos):
     return enemyRookThreat(pos) + enemyBishopThreat(pos)
- 
+
 def enemyRookThreat(pos):
     threatList = []
     row = pos[0]
@@ -108,19 +109,19 @@ def enemyRookThreat(pos):
     while 0 <= row + i < rows and board[row + i][col][0] != "X":
         threatList.append(rowColToCoord(row + i, col))
         i += 1
- 
+
     i = 1
     while 0 <= col - i < cols and board[row][col - i][0] != "X":
         threatList.append(rowColToCoord(row, col - i))
         i += 1
- 
+
     i = 1
     while 0 <= col + i < cols and board[row][col + i][0] != "X":
         threatList.append(rowColToCoord(row, col + i))
         i += 1
     
     return threatList
- 
+
 def enemyBishopThreat(pos):
     threatList = []
     row = pos[0]
@@ -129,29 +130,29 @@ def enemyBishopThreat(pos):
     while 0 <= row - i < rows and 0 <= col - i < cols and board[row - i][col - i][0] != "X":
         threatList.append(rowColToCoord(row - i, col - i))
         i += 1
- 
+
     i = 1
     while 0 <= row - i < rows and 0 <= col + i < cols and board[row - i][col + i][0] != "X":
         threatList.append(rowColToCoord(row - i, col + i))
         i += 1
- 
+
     i = 1
     while 0 <= row + i < rows and 0 <= col - i < cols and board[row + i][col - i][0] != "X":
         threatList.append(rowColToCoord(row + i, col - i))
         i += 1
- 
+
     i = 1
     while 0 <= row + i < rows and 0 <= col + i < cols and board[row + i][col + i][0] != "X":
         threatList.append(rowColToCoord(row + i, col + i))
         i += 1
     
     return threatList
- 
+
 def enemyKnightThreat(pos):
     threatList = []
     row = pos[0]
     col = pos[1]
- 
+
     for i in range (0, 2):
         coeff1 = (-1) ** i
         
@@ -162,15 +163,15 @@ def enemyKnightThreat(pos):
             newCol = col + coeff2 * 1
             if 0 <= newRow < rows and 0 <= newCol < cols and board[newRow][newCol][0] != "X":
                 threatList.append(rowColToCoord(newRow, newCol))
- 
+
             # horizontal L-path
             newRow = row + coeff1 * 1
             newCol = col + coeff2 * 2
             if 0 <= newRow < rows and 0 <= newCol < cols and board[newRow][newCol][0] != "X":
                 threatList.append(rowColToCoord(newRow,newCol))
- 
+
     return threatList
- 
+
 def insertObstacles(lines):
     global board
     numObstacles = int(lines[2].split(":")[1])
@@ -178,11 +179,11 @@ def insertObstacles(lines):
     for i in range(0, numObstacles):
         coord = coordStrToInt(obstacleList[i])
         board[coord[0]][coord[1]][0] = "X"
- 
+
 def removePiece(pos):
     global board
     board[pos[0]][pos[1]][0] = " "
- 
+
 def coordStrToInt(str):
     coord = []
     newList = re.split("(\d+)", str)
@@ -191,7 +192,7 @@ def coordStrToInt(str):
     coord.append(row)
     coord.append(col)
     return coord
- 
+
 def coordToStrIntTuple(coord):
     row = coord[0]
     col = coord[1]
@@ -199,126 +200,126 @@ def coordToStrIntTuple(coord):
     temp.append(intToAscii(col))
     temp.append(row)
     return tuple(temp)
- 
-# def printBoard(board):
-#     rowRef = 0
-#     boardRowsRep = []
-#     for i in range (0, 2 * rows + 2):
-#         boardColsRep = []
-#         if (i%2 == 0):    
-#             for j in range (0, 4 + cols * 4):
-#                 boardColsRep.append("-")            
-#         elif (i % 2 == 1 and i != 2 * rows + 1):
-#             boardColsRep.append(rowRef)
-#             for k in range (0, len(str(rows)) + 1
-#                                 - len(str(rowRef))):
-#                 boardColsRep.append(" ")
-#             boardColsRep.append("|")
-#             for j in range (0, cols):
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append(
-#                     board[int((i-1)/2)][j][0])
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append("|")
-#             rowRef += 1
-#         else:
-#             for k in range (0, len(str(rows)) + 1):
-#                 boardColsRep.append(" ")
-#             boardColsRep.append("|")
-#             alphabet = 97
-#             for j in range (0, cols):
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append("{}".format(chr(alphabet)))
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append("|")
-#                 alphabet += 1
-#         boardRowsRep.append(boardColsRep)
-#     for i in range (0, len(boardRowsRep)):
-#         row = boardRowsRep[i]
-#         for j in range (0, len(row)):
-#             print(row[j], end = "")
-#         print("")
- 
+
+def printBoard(board):
+    rowRef = 0
+    boardRowsRep = []
+    for i in range (0, 2 * rows + 2):
+        boardColsRep = []
+        if (i%2 == 0):    
+            for j in range (0, 4 + cols * 4):
+                boardColsRep.append("-")            
+        elif (i % 2 == 1 and i != 2 * rows + 1):
+            boardColsRep.append(rowRef)
+            for k in range (0, len(str(rows)) + 1
+                                - len(str(rowRef))):
+                boardColsRep.append(" ")
+            boardColsRep.append("|")
+            for j in range (0, cols):
+                boardColsRep.append(" ")
+                boardColsRep.append(
+                    board[int((i-1)/2)][j][0])
+                boardColsRep.append(" ")
+                boardColsRep.append("|")
+            rowRef += 1
+        else:
+            for k in range (0, len(str(rows)) + 1):
+                boardColsRep.append(" ")
+            boardColsRep.append("|")
+            alphabet = 97
+            for j in range (0, cols):
+                boardColsRep.append(" ")
+                boardColsRep.append("{}".format(chr(alphabet)))
+                boardColsRep.append(" ")
+                boardColsRep.append("|")
+                alphabet += 1
+        boardRowsRep.append(boardColsRep)
+    for i in range (0, len(boardRowsRep)):
+        row = boardRowsRep[i]
+        for j in range (0, len(row)):
+            print(row[j], end = "")
+        print("")
+
 def isComplete():
     global queue
     global k
- 
+
     if len(queue) == k:
         for elem in queue:
             if elem[0] != 0:
                 return False
         return True
- 
+
 def isEmpty(coord):
     return (board[coord[0]][coord[1]][0] == " ")
- 
+
 def isObstacle(coord):
     return (board[coord[0]][coord[1]][0] == "X")
- 
+
 def asciiToInt(c):
     return ord(c) - ord('a')
- 
+
 def intToAscii(n):
     return chr(n + ord('a'))
- 
+
 def rowColToCoord(row, col):
     coord = []
     coord.append(row)
     coord.append(col)
     return coord
- 
+
 def getScore(posList, threatList):
     # print("score = {}".format(len([x for x in threatList if x in posList and x in threatList])))
     return len([x for x in threatList if x in posList and x in threatList])
- 
+
 def listMatch(l1, l2):
     return not [x for x in l1 + l2 if x not in l1 or x not in l2]
- 
+
 def getLines():
     with open(sys.argv[1]) as f:
         lines = f.readlines()
     return lines
- 
+
 def search():
     global queue
     global k
     global board
- 
+
     tempPieceList = []
     tempPiecePosList = []
- 
+
     for i in range(0, len(pieceList)):
         tempPieceList.append(pieceList[i])
         tempPiecePosList.append(piecePosList[i])
- 
+
     # set to -1 to let a normal heapq iteration run first
     counter = -1
     ind = counter
- 
+
     for i in range(0, len(pieceList)):
         pieceType, piecePos, pieceThreatList = pieceList[i]
         # print("piecePosList = {}".format(piecePosList))
         # print("pieceThreatList[i] = {}".format(pieceThreatList[i]))
         # print("pieceTypeList[i] = {}".format(pieceTypeList[i]))
         hq.heappush(queue, (-1 * getScore(piecePosList, pieceThreatList), pieceType, piecePos))
- 
+
     while not isComplete():
- 
+
         # print("normal heapq run")
- 
+
         # print("length of queue = {}".format(len(queue)))
         # print("length of pieceList = {}".format(len(pieceList)))
         
         # print("length of queue in remove = {}".format(len(queue)))
- 
+
         if len(queue) == k:
- 
+
             if counter == len(pieceList) - 1:
                 
                 counter = 0
                 ind += 1
                 # print("ind = {}".format(ind))
- 
+
                 tempPieceList = []
                 tempPiecePosList = []
                 for i in range(0, len(pieceList)):
@@ -365,12 +366,12 @@ def search():
                     hq.heappush(queue, (newScore, pieceType, piecePos))
                     # print("len(queue) after insertion = {} when {} is inserted".format(len(queue), elem))
                 counter += 1
- 
+
         else:
             pieceScore, pieceType, piecePos = hq.heappop(queue)
             # print("{} at {} with score {} is removed".format(pieceType, piecePos, pieceScore))
             removePiece(piecePos)
- 
+
             h = 0
             for elem in tempPieceList:
                 if piecePos == elem[1]:
@@ -379,9 +380,9 @@ def search():
             # print("h = {}".format(h))
             del tempPieceList[h]
             del tempPiecePosList[h]
- 
+
             queue = []
- 
+
             for i in range(0, len(tempPieceList)):
                 # print("piecePosList = {}".format(piecePosList))
                 # print("pieceThreatList = {}".format(pieceThreatList))
@@ -396,16 +397,44 @@ def search():
                 board[piecePos[0]][piecePos[1]][0] = pieceRepr
         
         if ind == len(piecePosList):
+            for iter in range(0, 10000):
+                tempPieceList = []
+                tempPiecePosList = []
+                for i in range(0, len(pieceList)):
+                    # print(pieceList[i][0])
+                    tempPieceList.append(pieceList[i])
+                    tempPiecePosList.append(piecePosList[i])
+                
+                randPieceList = []
+                randPiecePosList = []
+                for iter2 in range(0, k):
+                    randInd = random.randint(0, len(tempPieceList) - 1)
+                    # print("randInd = {}".format(randInd))
+                    randPieceList.append(tempPieceList[randInd])
+                    randPiecePosList.append(tempPiecePosList[randInd])
+                    del tempPieceList[randInd]
+                    del tempPiecePosList[randInd]
+                
+                # print(len(randPieceList))
+                randScoreList = []
+                for r in range(0, len(randPieceList)):
+                    pieceType, piecePos, pieceThreatList = randPieceList[r]
+                    hq.heappush(queue, (-1 * getScore(randPiecePosList, pieceThreatList), pieceType, piecePos))
+                    randScoreList.append(getScore(randPiecePosList, pieceThreatList))
+                    if len([a for a in randScoreList if a == 0]) == len(randPieceList):
+                        return queue
+                    else:
+                        break
             return None
     return queue
- 
+
 def run_local():
     dict = {}
     parseFile(sys.argv[1])
     
-    # print("before search:")
-    # printBoard(board)
- 
+    print("before search:")
+    printBoard(board)
+
     if search():
         while queue:
             pieceScore, pieceType, piecePos = hq.heappop(queue)
@@ -414,13 +443,13 @@ def run_local():
             newCoord = []
             newCoord.append(coordString[0])
             newCoord.append(int(coordString[1]))
-            dict[tuple(newCoord)] = pieceType
- 
+            dict[tuple(newCoord)] = (pieceType, pieceScore)
+
         # print("\nAfter search")
         # printBoard(board)
     # print("dict = {}".format(dict))
     
     return dict
- 
-# if __name__ == "__main__":
-#     print(run_local())
+
+if __name__ == "__main__":
+    print(run_local())
