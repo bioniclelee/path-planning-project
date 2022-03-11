@@ -2,7 +2,8 @@ import sys
 import re
 import heapq as hq
 import math
- 
+import random
+
 rows = 0
 cols = 0
 k = 0
@@ -10,24 +11,24 @@ board = []
 queue = []
 piecePosList = []
 pieceList = []
- 
+
 # class Piece:
- 
+
 #     pos = 0
 #     type = None
 #     threatList = None
- 
+
 #     def __init__(self, pos, type, threatList):
 #         self.pos = pos
 #         self.type = type
 #         self.threatList = threatList  
- 
- 
+
+
 def parseFile(file):
     global rows
     global cols
     global board
- 
+
     with open(file) as f:
         lines = f.readlines()
     
@@ -38,7 +39,7 @@ def parseFile(file):
     insertObstacles(lines)
     insertK(lines)
     insertPieces(lines)
- 
+
 def insertK(lines):
     global k
     k = int(lines[4].split(":")[1])
@@ -50,7 +51,7 @@ def insertPieces(lines):
     numPieces = 0
     for n in list((lines[5].rstrip("\n").split(":"))[1].split(" ")):
         numPieces += int(n)
- 
+
     lineNum = 7
     while lineNum < len(lines):
         threatList = []
@@ -78,9 +79,9 @@ def insertPieces(lines):
         board[coord[0]][coord[1]][0] = enemyBoardInput
         
         pieceList.append((rawEntry[0], coord, threatList))
- 
+
         lineNum += 1
- 
+
 def enemyKingThreat(pos):
     threatList = []
     row = pos[0]
@@ -91,10 +92,10 @@ def enemyKingThreat(pos):
                 threatList.append(rowColToCoord(row + i, col + j))
     threatList.remove(rowColToCoord(row, col))
     return threatList
- 
+
 def enemyQueenThreat(pos):
     return enemyRookThreat(pos) + enemyBishopThreat(pos)
- 
+
 def enemyRookThreat(pos):
     threatList = []
     row = pos[0]
@@ -108,19 +109,19 @@ def enemyRookThreat(pos):
     while 0 <= row + i < rows and board[row + i][col][0] != "X":
         threatList.append(rowColToCoord(row + i, col))
         i += 1
- 
+
     i = 1
     while 0 <= col - i < cols and board[row][col - i][0] != "X":
         threatList.append(rowColToCoord(row, col - i))
         i += 1
- 
+
     i = 1
     while 0 <= col + i < cols and board[row][col + i][0] != "X":
         threatList.append(rowColToCoord(row, col + i))
         i += 1
     
     return threatList
- 
+
 def enemyBishopThreat(pos):
     threatList = []
     row = pos[0]
@@ -129,29 +130,29 @@ def enemyBishopThreat(pos):
     while 0 <= row - i < rows and 0 <= col - i < cols and board[row - i][col - i][0] != "X":
         threatList.append(rowColToCoord(row - i, col - i))
         i += 1
- 
+
     i = 1
     while 0 <= row - i < rows and 0 <= col + i < cols and board[row - i][col + i][0] != "X":
         threatList.append(rowColToCoord(row - i, col + i))
         i += 1
- 
+
     i = 1
     while 0 <= row + i < rows and 0 <= col - i < cols and board[row + i][col - i][0] != "X":
         threatList.append(rowColToCoord(row + i, col - i))
         i += 1
- 
+
     i = 1
     while 0 <= row + i < rows and 0 <= col + i < cols and board[row + i][col + i][0] != "X":
         threatList.append(rowColToCoord(row + i, col + i))
         i += 1
     
     return threatList
- 
+
 def enemyKnightThreat(pos):
     threatList = []
     row = pos[0]
     col = pos[1]
- 
+
     for i in range (0, 2):
         coeff1 = (-1) ** i
         
@@ -162,15 +163,15 @@ def enemyKnightThreat(pos):
             newCol = col + coeff2 * 1
             if 0 <= newRow < rows and 0 <= newCol < cols and board[newRow][newCol][0] != "X":
                 threatList.append(rowColToCoord(newRow, newCol))
- 
+
             # horizontal L-path
             newRow = row + coeff1 * 1
             newCol = col + coeff2 * 2
             if 0 <= newRow < rows and 0 <= newCol < cols and board[newRow][newCol][0] != "X":
                 threatList.append(rowColToCoord(newRow,newCol))
- 
+
     return threatList
- 
+
 def insertObstacles(lines):
     global board
     numObstacles = int(lines[2].split(":")[1])
@@ -178,11 +179,11 @@ def insertObstacles(lines):
     for i in range(0, numObstacles):
         coord = coordStrToInt(obstacleList[i])
         board[coord[0]][coord[1]][0] = "X"
- 
+
 def removePiece(pos):
     global board
     board[pos[0]][pos[1]][0] = " "
- 
+
 def coordStrToInt(str):
     coord = []
     newList = re.split("(\d+)", str)
@@ -191,7 +192,7 @@ def coordStrToInt(str):
     coord.append(row)
     coord.append(col)
     return coord
- 
+
 def coordToStrIntTuple(coord):
     row = coord[0]
     col = coord[1]
@@ -199,7 +200,7 @@ def coordToStrIntTuple(coord):
     temp.append(intToAscii(col))
     temp.append(row)
     return tuple(temp)
- 
+
 # def printBoard(board):
 #     rowRef = 0
 #     boardRowsRep = []
@@ -238,87 +239,100 @@ def coordToStrIntTuple(coord):
 #         for j in range (0, len(row)):
 #             print(row[j], end = "")
 #         print("")
- 
+
 def isComplete():
     global queue
     global k
- 
+
     if len(queue) == k:
         for elem in queue:
             if elem[0] != 0:
                 return False
         return True
- 
+
 def isEmpty(coord):
     return (board[coord[0]][coord[1]][0] == " ")
- 
+
 def isObstacle(coord):
     return (board[coord[0]][coord[1]][0] == "X")
- 
+
 def asciiToInt(c):
     return ord(c) - ord('a')
- 
+
 def intToAscii(n):
     return chr(n + ord('a'))
- 
+
 def rowColToCoord(row, col):
     coord = []
     coord.append(row)
     coord.append(col)
     return coord
- 
+
 def getScore(posList, threatList):
     # print("score = {}".format(len([x for x in threatList if x in posList and x in threatList])))
     return len([x for x in threatList if x in posList and x in threatList])
- 
+
 def listMatch(l1, l2):
     return not [x for x in l1 + l2 if x not in l1 or x not in l2]
- 
+
 def getLines():
     with open(sys.argv[1]) as f:
         lines = f.readlines()
     return lines
- 
+
+def pushAllToQueue(tempPieceList, tempPiecePosList):
+    global queue
+    queue = []
+    for i in range(0, len(tempPieceList)):
+        pieceType, piecePos, pieceThreatList = tempPieceList[i]
+        hq.heappush(queue, (-1 * getScore(tempPiecePosList, pieceThreatList), pieceType, piecePos))
+        if (pieceType == "Knight"):
+            pieceRepr = "H"
+        else:
+            pieceRepr = pieceType[0]
+        board[piecePos[0]][piecePos[1]][0] = pieceRepr
+
+def popFromQueue(tempPieceList, tempPiecePosList):
+    global queue
+    pieceScore, pieceType, piecePos = hq.heappop(queue)
+    h = 0
+    for elem in tempPieceList:
+        if piecePos == elem[1]:
+            break
+        h += 1
+    # print("h = {}".format(h))
+    del tempPieceList[h]
+    del tempPiecePosList[h]
+    board[piecePos[0]][piecePos[1]][0] = " "
+    return pieceScore, pieceType, piecePos
+
 def search():
     global queue
     global k
     global board
- 
+    global pieceList
+    global piecePosList
+
     tempPieceList = []
     tempPiecePosList = []
- 
+
     for i in range(0, len(pieceList)):
         tempPieceList.append(pieceList[i])
         tempPiecePosList.append(piecePosList[i])
- 
+
     # set to -1 to let a normal heapq iteration run first
     counter = -1
     ind = counter
- 
-    for i in range(0, len(pieceList)):
-        pieceType, piecePos, pieceThreatList = pieceList[i]
-        # print("piecePosList = {}".format(piecePosList))
-        # print("pieceThreatList[i] = {}".format(pieceThreatList[i]))
-        # print("pieceTypeList[i] = {}".format(pieceTypeList[i]))
-        hq.heappush(queue, (-1 * getScore(piecePosList, pieceThreatList), pieceType, piecePos))
- 
+
+    pushAllToQueue(pieceList, piecePosList)
+
     while not isComplete():
- 
-        # print("normal heapq run")
- 
-        # print("length of queue = {}".format(len(queue)))
-        # print("length of pieceList = {}".format(len(pieceList)))
-        
-        # print("length of queue in remove = {}".format(len(queue)))
- 
+
         if len(queue) == k:
- 
             if counter == len(pieceList) - 1:
-                
                 counter = 0
                 ind += 1
-                # print("ind = {}".format(ind))
- 
+
                 tempPieceList = []
                 tempPiecePosList = []
                 for i in range(0, len(pieceList)):
@@ -328,15 +342,11 @@ def search():
                 if -1 < ind < len(pieceList):
                     del tempPieceList[ind]
                     del tempPiecePosList[ind]
-            
-                queue = []
-                for j in range(0, len(tempPieceList)):
-                    pieceType, piecePos, pieceThreatList = tempPieceList[j]
-                    hq.heappush(queue, (-1 * getScore(tempPiecePosList, pieceThreatList), pieceType, piecePos))
+
+                pushAllToQueue(tempPieceList, tempPiecePosList)            
             
             else:
-                hq.heapify(queue)
-                # print("heapified")
+                pushAllToQueue(tempPieceList, tempPiecePosList)
                 min = -1 * math.inf
                 minInd = 0
                 for x in range(0, len(pieceList)):
@@ -344,9 +354,7 @@ def search():
                     if not elem in tempPieceList:
                         pieceType, piecePos, pieceThreatList = elem
                         newScore = -1 * getScore(tempPiecePosList, pieceThreatList)
-                        # print("tempPiecePosList = {}".format(tempPiecePosList))
                         currHeadScore = queue[0][0]
-                        # print("currHeadScore = {} | newScore = {}".format(currHeadScore, newScore))
                         if newScore > currHeadScore and newScore > min:
                             min = newScore
                             minInd = x
@@ -354,58 +362,43 @@ def search():
                 if min != -1 * math.inf:
                     elemToInsert = pieceList[minInd]
                     pieceType, piecePos, pieceThreatList = elemToInsert
-                    # print("{} inserted".format(elemToInsert))
                     tempPieceList.append(elemToInsert)
                     tempPiecePosList.append(piecePos)
-                    if (pieceType == "Knight"):
-                        pieceRepr = "H"
-                    else:
-                        pieceRepr = pieceType[0]
-                    board[piecePos[0]][piecePos[1]][0] = pieceRepr
-                    hq.heappush(queue, (newScore, pieceType, piecePos))
-                    # print("len(queue) after insertion = {} when {} is inserted".format(len(queue), elem))
+                    
+                    pushAllToQueue(tempPieceList, tempPiecePosList)
+                    
+                    pieceScore, pieceType, piecePos = popFromQueue(tempPieceList, tempPiecePosList)
+                    pushAllToQueue(tempPieceList, tempPiecePosList)
+
+                    if isComplete():
+                        return queue
                 counter += 1
- 
+
         else:
             pieceScore, pieceType, piecePos = hq.heappop(queue)
-            # print("{} at {} with score {} is removed".format(pieceType, piecePos, pieceScore))
             removePiece(piecePos)
- 
+
             h = 0
             for elem in tempPieceList:
                 if piecePos == elem[1]:
                     break
                 h += 1
-            # print("h = {}".format(h))
             del tempPieceList[h]
             del tempPiecePosList[h]
- 
-            queue = []
- 
-            for i in range(0, len(tempPieceList)):
-                # print("piecePosList = {}".format(piecePosList))
-                # print("pieceThreatList = {}".format(pieceThreatList))
-                # print("pieceType = {}".format(pieceType))
-                pieceType, piecePos, pieceThreatList = tempPieceList[i]
-                # print("pushing {} at {} with score = {}".format(pieceType, piecePos,getScore(tempPiecePosList, pieceThreatList)))
-                hq.heappush(queue, (-1 * getScore(tempPiecePosList, pieceThreatList), pieceType, piecePos))
-                if (pieceType == "Knight"):
-                    pieceRepr = "H"
-                else:
-                    pieceRepr = pieceType[0]
-                board[piecePos[0]][piecePos[1]][0] = pieceRepr
+            
+            pushAllToQueue(tempPieceList, tempPiecePosList)
         
         if ind == len(piecePosList):
             return None
     return queue
- 
+
 def run_local():
     dict = {}
     parseFile(sys.argv[1])
     
     # print("before search:")
     # printBoard(board)
- 
+
     if search():
         while queue:
             pieceScore, pieceType, piecePos = hq.heappop(queue)
@@ -415,12 +408,13 @@ def run_local():
             newCoord.append(coordString[0])
             newCoord.append(int(coordString[1]))
             dict[tuple(newCoord)] = pieceType
- 
+
         # print("\nAfter search")
         # printBoard(board)
     # print("dict = {}".format(dict))
     
     return dict
- 
-# if __name__ == "__main__":
-#     print(run_local())
+
+if __name__ == "__main__":
+    # print(run_local())
+    run_local()
