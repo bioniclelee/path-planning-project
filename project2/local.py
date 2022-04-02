@@ -12,18 +12,6 @@ queue = []
 piecePosList = []
 pieceList = []
  
-# class Piece:
- 
-#     pos = 0
-#     type = None
-#     threatList = None
- 
-#     def __init__(self, pos, type, threatList):
-#         self.pos = pos
-#         self.type = type
-#         self.threatList = threatList  
- 
- 
 def parseFile(file):
     global rows
     global cols
@@ -55,8 +43,6 @@ def insertPieces(lines):
     lineNum = 7
     while lineNum < len(lines):
         threatList = []
-        # print(lineNum)
-        # print("{} when lineNum = {}".format(lines[lineNum], lineNum))
         rawEntry = lines[lineNum].rstrip("\n").replace("[","").replace("]","").split(",")
         
         coord = coordStrToInt(rawEntry[1])
@@ -200,46 +186,7 @@ def coordToStrIntTuple(coord):
     temp.append(intToAscii(col))
     temp.append(row)
     return tuple(temp)
- 
-# def printBoard(board):
-#     rowRef = 0
-#     boardRowsRep = []
-#     for i in range (0, 2 * rows + 2):
-#         boardColsRep = []
-#         if (i%2 == 0):    
-#             for j in range (0, 4 + cols * 4):
-#                 boardColsRep.append("-")            
-#         elif (i % 2 == 1 and i != 2 * rows + 1):
-#             boardColsRep.append(rowRef)
-#             for k in range (0, len(str(rows)) + 1
-#                                 - len(str(rowRef))):
-#                 boardColsRep.append(" ")
-#             boardColsRep.append("|")
-#             for j in range (0, cols):
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append(
-#                     board[int((i-1)/2)][j][0])
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append("|")
-#             rowRef += 1
-#         else:
-#             for k in range (0, len(str(rows)) + 1):
-#                 boardColsRep.append(" ")
-#             boardColsRep.append("|")
-#             alphabet = 97
-#             for j in range (0, cols):
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append("{}".format(chr(alphabet)))
-#                 boardColsRep.append(" ")
-#                 boardColsRep.append("|")
-#                 alphabet += 1
-#         boardRowsRep.append(boardColsRep)
-#     for i in range (0, len(boardRowsRep)):
-#         row = boardRowsRep[i]
-#         for j in range (0, len(row)):
-#             print(row[j], end = "")
-#         print("")
- 
+
 def isComplete():
     global queue
     global k
@@ -269,7 +216,6 @@ def rowColToCoord(row, col):
     return coord
  
 def getScore(posList, threatList):
-    # print("score = {}".format(len([x for x in threatList if x in posList and x in threatList])))
     return len([x for x in threatList if x in posList and x in threatList])
  
 def listMatch(l1, l2):
@@ -300,7 +246,6 @@ def popFromQueue(tempPieceList, tempPiecePosList):
         if piecePos == elem[1]:
             break
         h += 1
-    # print("h = {}".format(h))
     del tempPieceList[h]
     del tempPiecePosList[h]
     board[piecePos[0]][piecePos[1]][0] = " "
@@ -354,9 +299,7 @@ def search():
                     if not elem in tempPieceList:
                         pieceType, piecePos, pieceThreatList = elem
                         newScore = -1 * getScore(tempPiecePosList, pieceThreatList)
-                        # print("tempPiecePosList = {}".format(tempPiecePosList))
                         currHeadScore = queue[0][0]
-                        # print("currHeadScore = {} | newScore = {}".format(currHeadScore, newScore))
                         if newScore > currHeadScore and newScore > min:
                             min = newScore
                             minInd = x
@@ -398,25 +341,13 @@ def run_local():
     dict = {}
     parseFile(sys.argv[1])
     
-    # print("before search:")
-    # printBoard(board)
- 
     if search():
         while queue:
             pieceScore, pieceType, piecePos = hq.heappop(queue)
-            # print("{} at {} with score {} remains".format(pieceType, piecePos, pieceScore))
             coordString = coordToStrIntTuple(piecePos)
             newCoord = []
             newCoord.append(coordString[0])
             newCoord.append(int(coordString[1]))
             dict[tuple(newCoord)] = pieceType
- 
-        # print("\nAfter search")
-        # printBoard(board)
-    # print("dict = {}".format(dict))
     
     return dict
- 
-if __name__ == "__main__":
-    # print(run_local())
-    run_local()

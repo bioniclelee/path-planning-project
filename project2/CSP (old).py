@@ -12,21 +12,29 @@ queue = []
 pieceList = []
 numFree = 0
 numPieces = 0
-obstacleList = []
+numObstacles = 0
  
 class State:
-    def __init__(self, numFree, remPieces, piecesPlaced, threatenedSpaces):
-        # self.board = board
+    def __init__(self, board, numFree, remPieces, piecesPlaced, threatenedSpaces):
+        self.board = board
         self.numFree = numFree
         self.remPieces = remPieces
         self.piecesPlaced = piecesPlaced
         self.threatenedSpaces = threatenedSpaces
 
+    def getScore(self):
+        score = 0
+        for i in range(0, rows):
+            for j in range(0, cols):
+                if self.board[i][j][0] == " ":
+                    score += 1
+        return score
+
     def __lt__(self, other):
-        return self.numFree < other.numFree
+        return self.getScore() < other.getScore()
  
     def __le__(self, other):
-        return self.numFree <= other.numFree
+        return self.getScore() <= other.getScore()
     
     def __str__(self):
         return "Pieces remaining: " + str(self.pieceList) + "\n" + str(self.board)
@@ -41,6 +49,8 @@ def parseFile(file):
     
     rows = int(lines[0].split(":")[1])
     cols = int(lines[1].split(":")[1])
+    board = [[[" ",1, False] for j in range(cols)] 
+                        for i in range(rows)] # board print, 1, explored status
     insertObstacles(lines)
     insertPieces(lines)
     
@@ -53,14 +63,9 @@ def insertPieces(lines):
     for n in list((lines[4].rstrip("\n").split(":"))[1].split(" ")):
         l.append(int(n))
         numPieces += int(n)
-    print("numPieces = {}".format(numPieces))
     
-    while l[0] > 0:
-        pieceList.append("King")
-        l[0] -= 1
-
     while l[1] > 0:
-        print("l[1] = {}".format(l[1]))
+        # print("l[1] = {}".format(l[1]))
         pieceList.append("Queen")
         l[1] -= 1
     
@@ -76,6 +81,10 @@ def insertPieces(lines):
     while l[4] > 0:
         pieceList.append("Knight")
         l[4] -= 1
+        
+    while l[0] > 0:
+        pieceList.append("King")
+        l[0] -= 1
     
     # print("pieceList = {}".format(pieceList))
     
@@ -85,7 +94,7 @@ def enemyKingThreat(pos):
     col = pos[1]
     for i in range (-1, 2):
         for j in range (-1, 2):
-            if 0 <= row + i < rows and 0 <= col + j < cols and not isObstacle(rowColToCoord(row + i, col + j)):
+            if 0 <= row + i < rows and 0 <= col + j < cols:
                 threatList.append(tuple(rowColToCoord(row + i, col + j)))
     threatList.remove(tuple(rowColToCoord(row, col)))
     return threatList
@@ -98,22 +107,22 @@ def enemyRookThreat(pos):
     row = pos[0]
     col = pos[1]
     i = 1
-    while 0 <= row - i < rows and not isObstacle(rowColToCoord(row - i, col)):
+    while 0 <= row - i < rows and board[row - i][col][0] != "X":
         threatList.append(tuple(rowColToCoord(row - i, col)))
         i += 1
     
     i = 1
-    while 0 <= row + i < rows and not isObstacle(rowColToCoord(row + i, col)):
+    while 0 <= row + i < rows and board[row + i][col][0] != "X":
         threatList.append(tuple(rowColToCoord(row + i, col)))
         i += 1
  
     i = 1
-    while 0 <= col - i < cols and not isObstacle(rowColToCoord(row, col - i)):
+    while 0 <= col - i < cols and board[row][col - i][0] != "X":
         threatList.append(tuple(rowColToCoord(row, col - i)))
         i += 1
  
     i = 1
-    while 0 <= col + i < cols and not isObstacle(rowColToCoord(row, col + i)):
+    while 0 <= col + i < cols and board[row][col + i][0] != "X":
         threatList.append(tuple(rowColToCoord(row, col + i)))
         i += 1
     
@@ -124,22 +133,22 @@ def enemyBishopThreat(pos):
     row = pos[0]
     col = pos[1]
     i = 1
-    while 0 <= row - i < rows and 0 <= col - i < cols and not isObstacle(rowColToCoord(row - i, col - i)):
+    while 0 <= row - i < rows and 0 <= col - i < cols and board[row - i][col - i][0] != "X":
         threatList.append(tuple(rowColToCoord(row - i, col - i)))
         i += 1
  
     i = 1
-    while 0 <= row - i < rows and 0 <= col + i < cols and not isObstacle(rowColToCoord(row - i, col + i)):
+    while 0 <= row - i < rows and 0 <= col + i < cols and board[row - i][col + i][0] != "X":
         threatList.append(tuple(rowColToCoord(row - i, col + i)))
         i += 1
  
     i = 1
-    while 0 <= row + i < rows and 0 <= col - i < cols and not isObstacle(rowColToCoord(row + i, col - i)):
+    while 0 <= row + i < rows and 0 <= col - i < cols and board[row + i][col - i][0] != "X":
         threatList.append(tuple(rowColToCoord(row + i, col - i)))
         i += 1
  
     i = 1
-    while 0 <= row + i < rows and 0 <= col + i < cols and not isObstacle(rowColToCoord(row + i, col + i)):
+    while 0 <= row + i < rows and 0 <= col + i < cols and board[row + i][col + i][0] != "X":
         threatList.append(tuple(rowColToCoord(row + i, col + i)))
         i += 1
     
@@ -158,13 +167,13 @@ def enemyKnightThreat(pos):
             coeff2 = (-1) ** j
             newRow = row + coeff1 * 2
             newCol = col + coeff2 * 1
-            if 0 <= newRow < rows and 0 <= newCol < cols and not isObstacle(rowColToCoord(newRow, newCol)):
+            if 0 <= newRow < rows and 0 <= newCol < cols and board[newRow][newCol][0] != "X":
                 threatList.append(tuple(rowColToCoord(newRow, newCol)))
  
             # horizontal L-path
             newRow = row + coeff1 * 1
             newCol = col + coeff2 * 2
-            if 0 <= newRow < rows and 0 <= newCol < cols and not isObstacle(rowColToCoord(newRow, newCol)):
+            if 0 <= newRow < rows and 0 <= newCol < cols and board[newRow][newCol][0] != "X":
                 threatList.append(tuple(rowColToCoord(newRow,newCol)))
  
     return threatList
@@ -172,14 +181,18 @@ def enemyKnightThreat(pos):
 def insertObstacles(lines):
     global board
     global numFree
-    global obstacleList
+    global numObstacles
 
     numObstacles = int(lines[2].split(":")[1])
-    obstacles = lines[3].split(":")[1].rstrip("\n").split(" ")
+    obstacleList = lines[3].split(":")[1].rstrip("\n").split(" ")
     for i in range(0, numObstacles):
-        print("coordStrToInt(obstacles[i]) = {}".format(coordStrToInt(obstacles[i])))
-        obstacleList.append(tuple(coordStrToInt(obstacles[i])))
+        coord = coordStrToInt(obstacleList[i])
+        board[coord[0]][coord[1]][0] = "O"
     numFree = rows * cols - numObstacles
+ 
+def removePiece(pos):
+    global board
+    board[pos[0]][pos[1]][0] = " "
  
 def coordStrToInt(str):
     coord = []
@@ -191,7 +204,6 @@ def coordStrToInt(str):
     return coord
  
 def coordToStrIntTuple(coord):
-    coord = list(coord)
     row = coord[0]
     col = coord[1]
     temp = []
@@ -199,10 +211,7 @@ def coordToStrIntTuple(coord):
     temp.append(row)
     return tuple(temp)
  
-def printBoard(stateToCheck):
-    global obstacleList
-    board = [[[" ",1, False] for j in range(cols)] 
-                    for i in range(rows)] # board print, 1, explored status
+def printBoard(tempBoard):
     rowRef = 0
     boardRowsRep = []
     for i in range (0, 2 * rows + 2):
@@ -217,18 +226,9 @@ def printBoard(stateToCheck):
                 boardColsRep.append(" ")
             boardColsRep.append("|")
             for j in range (0, cols):
-                boardEntry = " "
-                coord = tuple(rowColToCoord(int((i-1)/2), j))
-                if coord in obstacleList:
-                    boardEntry = "O"
-                for elem in stateToCheck.piecesPlaced:
-                    if coord == elem[1]:
-                        if elem[0] == "Knight":
-                            boardEntry = "H"
-                        else:
-                            boardEntry = elem[0][0]
                 boardColsRep.append(" ")
-                boardColsRep.append(boardEntry)
+                boardColsRep.append(
+                    tempBoard[int((i-1)/2)][j][0])
                 boardColsRep.append(" ")
                 boardColsRep.append("|")
             rowRef += 1
@@ -249,14 +249,26 @@ def printBoard(stateToCheck):
         for j in range (0, len(row)):
             print(row[j], end = "")
         print("")
+ 
+def cleanBoard(tempBoard):
+    for i in range(0, rows):
+        for j in range(0, cols):
+            if tempBoard[i][j][0] == "X":
+                tempBoard[i][j][0] = " "
+    insertObstacles(getLines())
 
 def isComplete(stateToCheck):
     global numPieces
     return len(stateToCheck.piecesPlaced) == numPieces
  
-def isObstacle(coord):
-    global obstacleList
-    return tuple(coord) in obstacleList
+def isEmpty(tempBoard, coord):
+    return (tempBoard[coord[0]][coord[1]][0] == " ")
+ 
+def isObstacle(tempBoard, coord):
+    return tempBoard[coord[0]][coord[1]][0] == "O"
+
+def isThreatened(tempBoard, coord):
+    return tempBoard[coord[0]][coord[1]][0] == "X"
  
 def asciiToInt(c):
     return ord(c) - ord('a')
@@ -275,23 +287,12 @@ def getLines():
         lines = f.readlines()
     return lines
 
-def isOccupied(coord, stateToCheck):
-    global obstacleList
-    # print("stateToCheck.piecesPlaced = {}".format(stateToCheck.piecesPlaced))
-    threatenedSpacesSet = set(stateToCheck.threatenedSpaces)
-    print("stateToCheck.threatenedSpaces = {}".format(len(stateToCheck.threatenedSpaces)))
-    obstaclesSet = set(obstacleList)
-    l = list(threatenedSpacesSet.union(obstaclesSet))
-    # print(coord)
-    # print(l)
-    return tuple(coord) in l
-
-def threatenIfInserted(tempPiecesPlaced, threatList):
+def threatens(tempPiecesPlaced, threatList):
     for elem in tempPiecesPlaced:
-        print (elem[1])
-        print("threatList = {}".format(threatList))
+        # print (elem[1])
+        # print(threatList)
         if tuple(elem[1]) in threatList:
-            print("is threatened")
+            # print("is threatened")
             return True
     
     return False
@@ -303,47 +304,57 @@ def pushNextPiece(l):
 
 def placePiece(stateToExpand, piece, remPieces):
     global queue
-    global obstacleList
-    print("piece to be placed = {}".format(piece))
+    global numObstacles
+    # print("piece to be placed = {}".format(piece))
+
     placementQueue = []
     hq.heapify(placementQueue)
     for i in range(0, rows):
         for j in range(0, cols):
 
+            tempBoard = deepcopy(stateToExpand.board)
+            tempPiecesPlaced = deepcopy(stateToExpand.piecesPlaced)
+            tempThreatenedSpaces = deepcopy(stateToExpand.threatenedSpaces)
+
             coord = []
             coord.append(i)
             coord.append(j)
 
-            if not isOccupied(coord, stateToExpand):
+            if isEmpty(tempBoard, coord):
+                # print("placing {} at {},{}".format(piece,i,j))
                 if piece == "King": 
+                    enemyBoardInput = "K"
                     threatList = enemyKingThreat(coord)
                 if piece == "Queen":
+                    enemyBoardInput = "Q"
                     threatList = enemyQueenThreat(coord)
                 if piece == "Bishop":
+                    enemyBoardInput = "B"
                     threatList = enemyBishopThreat(coord)
                 if piece == "Rook":
+                    enemyBoardInput = "R"
                     threatList = enemyRookThreat(coord)
                 if piece == "Knight":
+                    enemyBoardInput = "H"
                     threatList = enemyKnightThreat(coord)
-                threatList.append(tuple(coord))
-                print("threatList before threaten check = {}".format(threatList))
-                tempPiecesPlaced = deepcopy(stateToExpand.piecesPlaced)
-                if not threatenIfInserted(tempPiecesPlaced, threatList):
-                    tempThreatenedSpaces = deepcopy(stateToExpand.threatenedSpaces)
-                    print("placing {} at {},{}".format(piece,i,j))
-                    tempPiecesPlaced.append((piece, tuple(coord)))
+                
+                if not threatens(tempPiecesPlaced, threatList):
+                    # print('not threatens')
+                    tempPiecesPlaced.append((piece, coord))
+                    tempBoard[coord[0]][coord[1]][0] = enemyBoardInput
+                    for coord in threatList:
+                        if isEmpty(tempBoard, coord) or isThreatened(tempBoard, coord):
+                            tempBoard[coord[0]][coord[1]][0] = "X"
+
                     tempThreatenedSpacesSet = set(tempThreatenedSpaces)
                     threatListSet = set(threatList)
                     tempThreatenedSpacesSet = tempThreatenedSpacesSet.union(threatListSet)
-                    # print("before set diff = {}".format(len(tempThreatenedSpacesSet)))
-                    # tempThreatenedSpacesSet = tempThreatenedSpacesSet.difference(set(obstacleList))
                     tempThreatenedSpaces = list(tempThreatenedSpacesSet)
-                    print("tempThreatenedSpaces = {}".format(tempThreatenedSpaces))
 
-                    updatedNumFree = rows * cols - len(tempThreatenedSpaces) - len(obstacleList)
+                    updatedNumFree = rows * cols - len(tempThreatenedSpaces) - numObstacles
 
-                    tempState = State(updatedNumFree, remPieces, tempPiecesPlaced, tempThreatenedSpaces)
-                    print("score of state = {} | piecesPlaced = {} | remPieces = {}".format(tempState.numFree, tempState.piecesPlaced, tempState.remPieces))
+                    tempState = State(tempBoard, updatedNumFree, remPieces, tempPiecesPlaced, tempThreatenedSpaces)
+                    # print("score of state = {} | piecesPlaced = {} | remPieces = {}".format(tempState.numFree, tempState.piecesPlaced, tempState.remPieces))
                     hq.heappush(placementQueue, (-1 * tempState.numFree, tempState))
     
     limit = 3
@@ -354,13 +365,13 @@ def placePiece(stateToExpand, piece, remPieces):
         queue.insert(0, (-1 * score, tempState))
 
 def search():
-    # global board
+    global board
     global pieceList
     global numFree
 
-    # initialBoard = deepcopy(board)
+    initialBoard = deepcopy(board)
     initialRemPieces = deepcopy(pieceList)
-    initialState = State(numFree, initialRemPieces, [], [])
+    initialState = State(initialBoard, numFree, initialRemPieces, [], [])
 
     nextPiece, updatedRemPieces = pushNextPiece(initialState.remPieces)
     placePiece(initialState, nextPiece, updatedRemPieces)
@@ -372,7 +383,6 @@ def search():
         #     print("score of state = {} | piecesPlaced = {} | remPieces = {}".format(stateToExpand.numFree, stateToExpand.piecesPlaced, stateToExpand.remPieces))
         #     return stateToExpand, counter
         if isComplete(stateToExpand):
-            print("score of state = {} | piecesPlaced = {} | remPieces = {}".format(stateToExpand.numFree, stateToExpand.piecesPlaced, stateToExpand.remPieces))
             return stateToExpand, counter
         if score > 0 and len(stateToExpand.remPieces) > 0 and score >= len(stateToExpand.remPieces):
             nextPiece, updatedRemPieces = pushNextPiece(stateToExpand.remPieces)
@@ -385,16 +395,40 @@ def run_CSP():
     dict = {}
     parseFile(sys.argv[1])
     
+    # print("before search:")
+    # printBoard(board)
+    
     finalState, counter = search()
 
     if finalState:
-        print("finalState: score of state = {} | piecesPlaced = {} | remPieces = {}".format(finalState.numFree, finalState.piecesPlaced, finalState.remPieces))
-        for elem in finalState.piecesPlaced:
-            pieceType, coord = elem
-            dict[coordToStrIntTuple(coord)] = pieceType
-        printBoard(finalState)
+        for i in range(0, rows):
+            for j in range(0, cols):
+                entry = finalState.board[i][j][0]
+                if entry != " " and entry != "X" and entry != "O":
+                    if entry == "K": 
+                        pieceType = "King"
+                    if entry == "Q":
+                        pieceType = "Queen"
+                    if entry == "B":
+                        pieceType = "Bishop"
+                    if entry == "R":
+                        pieceType = "Rook"
+                    if entry == "H":
+                        pieceType = "Knight"
+                
+                    coord = []
+                    coord.append(i)
+                    coord.append(j)
+                    dict[coordToStrIntTuple(coord)] = pieceType
+
+        # print("\nAfter search")
+        # cleanBoard(finalState.board)
+        # printBoard(finalState.board)
+        # print("counter = {}".format(counter))
+        # print("dict = {}".format(dict))
+    
     return dict
  
 if __name__ == "__main__":
     # print(run_local())
-    print(run_CSP())
+    run_CSP()
