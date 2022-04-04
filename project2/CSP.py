@@ -313,4 +313,4 @@ def run_CSP():
     return dict
  
 if __name__ == "__main__":
-    run_CSP()
+    print(run_CSP())
