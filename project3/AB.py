@@ -2,22 +2,25 @@ import sys
 import re
 import heapq as hq
 from copy import deepcopy
+import math
  
-rows = 0
-cols = 0
+rows = 5
+cols = 5
 board = []
 queue = []
-pieceList = []
 numFree = 0
 numPieces = 0
-obstacleList = []
+maxTurns = 3
  
 class State:
-    def __init__(self, piecePos, moves, score):
-        self.piecePos = piecePos
-        self.moves = moves
-        self.score = score
- 
+    def __init__(self, gameboard, turn):
+        self.gameboard = gameboard
+        self.turn = turn
+
+    def isMaxPlayer(self):
+        global maxTurns
+        return maxTurns % 2 == self.turn % 2
+
     def __lt__(self, other):
         return self.score < other.score
  
@@ -25,7 +28,7 @@ class State:
         return self.score <= other.score
     
     def __str__(self):
-        return str(self.piecePos)
+        return str(self.gameboard)
  
 def parseFile(file):
     global rows
@@ -35,115 +38,105 @@ def parseFile(file):
     with open(file) as f:
         lines = f.readlines()
     
-    rows = int(lines[0].split(":")[1])
-    cols = int(lines[1].split(":")[1])
-    insertPieces(lines)
+    rows = 5
+    cols = 5
     
-def insertPieces(state):
+def initializeGameboard():
 
-    if state.piecePos:
-        print("true")
-        state.piecePos[coordToStrIntTuple((4, 4))] = ('King', 'White')
-        state.piecePos[coordToStrIntTuple((4, 3))] = ('Queen', 'White')
-        state.piecePos[coordToStrIntTuple((4, 2))] = ('Knight', 'White')
-        state.piecePos[coordToStrIntTuple((4, 1))] = ('Rook', 'White')
-        for i in range(0, 5):
-            state.piecePos[coordToStrIntTuple((3, i))] = ('Pawn', 'White')
-
-        state.piecePos[coordToStrIntTuple((0, 4))] = ('King', 'White')
-        state.piecePos[coordToStrIntTuple((0, 3))] = ('Queen', 'White')
-        state.piecePos[coordToStrIntTuple((0, 2))] = ('Knight', 'White')
-        state.piecePos[coordToStrIntTuple((0, 1))] = ('Rook', 'White')
-        for i in range(0, 5):
-            state.piecePos[coordToStrIntTuple((1, i))] = ('Pawn', 'White')
-    else:
-        print("false")
-
-    # # enemy pieces
-    # state.piecePos.append(("King", tuple(coordStrToInt("e4")), "White"))
-    # state.piecePos.append(("Queen", tuple(coordStrToInt("d4")), "White"))
-    # state.piecePos.append(("Bishop", tuple(coordStrToInt("c4")), "White"))
-    # state.piecePos.append(("Knight", tuple(coordStrToInt("b4")), "White"))
-    # state.piecePos.append(("Rook", tuple(coordStrToInt("a4")), "White"))
-    # for i in range(0, 5):
-    #     state.piecePos.append(("Pawn", tuple(coordStrToInt(intToAscii(i) + "3")), "White"))
-
-    # # friendly pieces
-    # state.piecePos.append(("King", tuple(coordStrToInt("e0")), "White"))
-    # state.piecePos.append(("Queen", tuple(coordStrToInt("d0")), "White"))
-    # state.piecePos.append(("Bishop", tuple(coordStrToInt("c0")), "White"))
-    # state.piecePos.append(("Knight", tuple(coordStrToInt("b0")), "White"))
-    # state.piecePos.append(("Rook", tuple(coordStrToInt("a0")), "White"))
-    # for i in range(0, 5):
-    #     state.piecePos.append(("Pawn", tuple(coordStrToInt(intToAscii(i) + "1")), "White"))
+    return {('a', 1): ('Pawn', 'White'), ('b', 1): ('Pawn', 'White'), ('c', 1): ('Pawn', 'White'),
+         ('d', 1): ('Pawn', 'White'), ('e', 1): ('Pawn', 'White'), ('a', 3): ('Pawn', 'Black'),
+         ('b', 3): ('Pawn', 'Black'), ('c', 3): ('Pawn', 'Black'), ('d', 3): ('Pawn', 'Black'),
+         ('e', 3): ('Pawn', 'Black'), ('a', 0): ('Rook', 'White'), ('b', 0): ('Knight', 'White'),
+         ('c', 0): ('Bishop', 'White'), ('d', 0): ('Queen', 'White'), ('e', 0): ('King', 'White'),
+         ('a', 4): ('Rook', 'Black'), ('b', 4): ('Knight', 'Black'), ('c', 4): ('Bishop', 'Black'),
+         ('d', 4): ('Queen', 'Black'), ('e', 4): ('King', 'Black')}
     
-def enemyKingThreat(pos):
+def kingThreat(colour, state, pos):
+    global rows
+    global cols
+
     threatList = []
+    # print("king pos = {}".format(pos))
     row = pos[0]
     col = pos[1]
     for i in range (-1, 2):
         for j in range (-1, 2):
-            if 0 <= row + i < rows and 0 <= col + j < cols and not isObstacle(rowColToCoord(row + i, col + j)):
+            if 0 <= row + i < rows and 0 <= col + j < cols and not isFriendly(colour, state, rowColToCoord(row + i, col + j)):
                 threatList.append(tuple(rowColToCoord(row + i, col + j)))
-    threatList.remove(tuple(rowColToCoord(row, col)))
     return threatList
  
-def enemyQueenThreat(pos):
-    return enemyRookThreat(pos) + enemyBishopThreat(pos)
+def queenThreat(colour, state, pos):
+    return rookThreat(colour, state, pos) + bishopThreat(colour, state, pos)
  
-def enemyRookThreat(pos):
+def rookThreat(colour, state, pos):
     threatList = []
     row = pos[0]
     col = pos[1]
     i = 1
-    while 0 <= row - i < rows and not isObstacle(rowColToCoord(row - i, col)):
+    while 0 <= row - i < rows and not isFriendly(colour, state, rowColToCoord(row - i, col)):
         threatList.append(tuple(rowColToCoord(row - i, col)))
+        if isEnemy(colour, state, rowColToCoord(row - i, col)):
+            break
         i += 1
     
     i = 1
-    while 0 <= row + i < rows and not isObstacle(rowColToCoord(row + i, col)):
+    while 0 <= row + i < rows and not isFriendly(colour, state, rowColToCoord(row + i, col)):
         threatList.append(tuple(rowColToCoord(row + i, col)))
+        if isEnemy(colour, state, rowColToCoord(row + i, col)):
+            break
         i += 1
  
     i = 1
-    while 0 <= col - i < cols and not isObstacle(rowColToCoord(row, col - i)):
+    while 0 <= col - i < cols and not isFriendly(colour, state, rowColToCoord(row, col - i)):
         threatList.append(tuple(rowColToCoord(row, col - i)))
+        if isEnemy(colour, state, rowColToCoord(row, col - i)):
+            break
         i += 1
  
     i = 1
-    while 0 <= col + i < cols and not isObstacle(rowColToCoord(row, col + i)):
+    while 0 <= col + i < cols and not isFriendly(colour,state, rowColToCoord(row, col + i)):
         threatList.append(tuple(rowColToCoord(row, col + i)))
+        if isEnemy(colour, state, rowColToCoord(row, col + i)):
+            break
         i += 1
     
     return threatList
  
-def enemyBishopThreat(pos):
+def bishopThreat(colour, state, pos):
     threatList = []
     row = pos[0]
     col = pos[1]
     i = 1
-    while 0 <= row - i < rows and 0 <= col - i < cols and not isObstacle(rowColToCoord(row - i, col - i)):
+    while 0 <= row - i < rows and 0 <= col - i < cols and not isFriendly(colour, state, rowColToCoord(row - i, col - i)):
         threatList.append(tuple(rowColToCoord(row - i, col - i)))
+        if isEnemy(colour, state, rowColToCoord(row - i, col -i)):
+            break
         i += 1
  
     i = 1
-    while 0 <= row - i < rows and 0 <= col + i < cols and not isObstacle(rowColToCoord(row - i, col + i)):
+    while 0 <= row - i < rows and 0 <= col + i < cols and not isFriendly(colour, state, rowColToCoord(row - i, col + i)):
         threatList.append(tuple(rowColToCoord(row - i, col + i)))
+        if isEnemy(colour, state, rowColToCoord(row - i, col + i)):
+            break
         i += 1
  
     i = 1
-    while 0 <= row + i < rows and 0 <= col - i < cols and not isObstacle(rowColToCoord(row + i, col - i)):
+    while 0 <= row + i < rows and 0 <= col - i < cols and not isFriendly(colour, state, rowColToCoord(row + i, col - i)):
         threatList.append(tuple(rowColToCoord(row + i, col - i)))
+        if isEnemy(colour, state, rowColToCoord(row + i, col - i)):
+            break
         i += 1
  
     i = 1
-    while 0 <= row + i < rows and 0 <= col + i < cols and not isObstacle(rowColToCoord(row + i, col + i)):
+    while 0 <= row + i < rows and 0 <= col + i < cols and not isFriendly(colour, state, rowColToCoord(row + i, col + i)):
         threatList.append(tuple(rowColToCoord(row + i, col + i)))
+        if isEnemy(colour, state, rowColToCoord(row + i, col + i)):
+            break
         i += 1
     
     return threatList
  
-def enemyKnightThreat(pos):
+def knightThreat(colour, state, pos):
     threatList = []
     row = pos[0]
     col = pos[1]
@@ -156,17 +149,90 @@ def enemyKnightThreat(pos):
             coeff2 = (-1) ** j
             newRow = row + coeff1 * 2
             newCol = col + coeff2 * 1
-            if 0 <= newRow < rows and 0 <= newCol < cols and not isObstacle(rowColToCoord(newRow, newCol)):
+            if 0 <= newRow < rows and 0 <= newCol < cols and not isFriendly(colour, state, rowColToCoord(newRow, newCol)):
                 threatList.append(tuple(rowColToCoord(newRow, newCol)))
  
             # horizontal L-path
             newRow = row + coeff1 * 1
             newCol = col + coeff2 * 2
-            if 0 <= newRow < rows and 0 <= newCol < cols and not isObstacle(rowColToCoord(newRow, newCol)):
+            if 0 <= newRow < rows and 0 <= newCol < cols and not isFriendly(colour, state, rowColToCoord(newRow, newCol)):
                 threatList.append(tuple(rowColToCoord(newRow,newCol)))
  
     return threatList
 
+def pawnThreat(colour, state, pos):
+    threatList = []
+    row = pos[0]
+    col = pos[1]
+    # print(pos, coordToStrIntTuple(pos))
+    if colour == "White":
+        coeff = -1
+    else:
+        # print("Black coeff = 1")
+        coeff = 1
+    for i in range (-1, 2):
+        if 0 <= row - (i * coeff) < rows and 0 <= col < cols and not isOccupied(colour, state, rowColToCoord(row - (i * coeff), col)):
+            # print("true again")
+            threatList.append(tuple(rowColToCoord(row - (i * coeff), col)))
+        if isEnemy(colour, state, rowColToCoord(row - (i * coeff), col + 1)):
+            threatList.append(tuple(rowColToCoord(row - (i * coeff), col + 1)))
+        if isEnemy(colour, state, rowColToCoord(row - (i * coeff), col - 1)):
+            threatList.append(tuple(rowColToCoord(row - (i * coeff), col - 1)))
+    print("pawn threatList = {}".format(threatList))
+    return threatList
+
+# pos should be in (int, int) form
+def genEnemyPos(state, pos):
+    enemyPos = []
+    # print("genEnemyPos = {}".format(pos))
+    originalPiece, originalColour = state.gameboard[coordToStrIntTuple(pos)]
+    for elem in state.gameboard:
+        piece, colour = state.gameboard[elem]
+        if colour != originalColour:
+            enemyPos.append((strIntTupleToCoord(elem), piece))
+    return enemyPos
+
+# coord should be in (int, int) form
+def genThreatList(piece, colour, state, coord):
+    if piece == "King": 
+        threatList = kingThreat(colour, state, coord)
+    if piece == "Queen":
+        threatList = queenThreat(colour, state, coord)
+    if piece == "Bishop":
+        threatList = bishopThreat(colour, state, coord)
+    if piece == "Rook":
+        threatList = rookThreat(colour, state, coord)
+    if piece == "Knight":
+        threatList = knightThreat(colour, state, coord)
+    if piece == "Pawn":
+        threatList = pawnThreat(colour, state, coord)
+    
+    return threatList
+
+# boriginalPos should be in (int, int) form
+def calcHeuristic(state):
+    # print("calcHeuristic: originalPos = {}".format(originalPos))
+    materialScore = {'King': 0, 'Pawn': 10, 'Bishop': 3, 'Knight': 3, 'Rook': 5, 'Queen': 9}
+    white = set()
+    black = set()
+    whiteScore = 0
+    blackScore = 0
+    
+    # checking to see if an enemy piece is consumed
+    for coord in state.gameboard:
+        piece, colour = state.gameboard[coord]
+        threatList = genThreatList(piece, colour, state, strIntTupleToCoord(coord))
+        if colour == "White":
+            white.update(set(threatList))
+            whiteScore += materialScore[piece]
+        else:
+            black.update(set(threatList))
+            blackScore += materialScore[piece]
+    # print("heuristic = {}".format(2 ** (whiteScore + len(white)) - 2 ** (blackScore + len(black))))
+    whiteScore += len(white)
+    blackScore += len(black)
+    finalHeuristic = whiteScore - blackScore
+    return finalHeuristic
  
 def coordStrToInt(str):
     coord = []
@@ -185,15 +251,60 @@ def coordToStrIntTuple(coord):
     temp.append(intToAscii(col))
     temp.append(row)
     return tuple(temp)
+
+def strIntTupleToCoord(coord):
+    coord = list(coord)
+    row = coord[1]
+    col = coord[0]
+    temp = []
+    temp.append(int(row))
+    temp.append(asciiToInt(col))
+    return tuple(temp)
  
 def isComplete(stateToCheck):
     global numPieces
     return len(stateToCheck.piecesPlaced) == numPieces
- 
-def isObstacle(coord):
-    global obstacleList
-    return tuple(coord) in obstacleList
- 
+
+def isOccupied(originalColour, state, coordToCheck):
+    return isFriendly(originalColour, state, coordToCheck) or isEnemy(originalColour, state, coordToCheck)
+
+def isFriendly(originalColour, state, coordToCheck):
+    # print('pos in isFriendly = {}'.format(pos))
+    if coordToStrIntTuple(coordToCheck) in state.gameboard:
+        piece, colour = state.gameboard[coordToStrIntTuple(coordToCheck)]
+        return colour == originalColour
+    else:
+        return False
+
+def isEnemy(originalColour, state, coordToCheck):
+    if coordToStrIntTuple(coordToCheck) in state.gameboard:
+        piece, colour = state.gameboard[coordToStrIntTuple(coordToCheck)]
+        return colour != originalColour
+    else:
+        return False
+
+def isGameOver(state):
+    kings = set()
+    threats = set()
+    for coord in state.gameboard:
+        piece, colour = state.gameboard[coord]
+        # print(piece, colour)
+        if piece == "King":
+            kings.add(strIntTupleToCoord(coord))
+
+        if piece != "King":
+            threatList = genThreatList(piece, colour, state, strIntTupleToCoord(coord))
+            # print(threatList)
+            threats.update(set(threatList))
+            # print("inside threats = {}".format(threats))
+    # print("kings = {}".format(kings))
+    # print("threats = {}".format(threats))
+    # if len(kings.intersection(threats)) != 0:
+    #     print("game is over")
+    # else:
+    #     print("game is not over")
+    return len(kings.intersection(threats)) != 0
+
 def asciiToInt(c):
     return ord(c) - ord('a')
  
@@ -206,102 +317,110 @@ def rowColToCoord(row, col):
     coord.append(col)
     return coord
  
-def getLines():
-    with open(sys.argv[1]) as f:
-        lines = f.readlines()
-    return lines
+# def getLines():
+#     with open(sys.argv[1]) as f:
+#         lines = f.readlines()
+#     return lines
  
-def isOccupied(coord, stateToCheck):
-    global obstacleList
-    threatenedSpacesSet = set(stateToCheck.threatenedSpaces)
-    obstaclesSet = set(obstacleList)
-    l = list(threatenedSpacesSet.union(obstaclesSet))
-    return tuple(coord) in l
  
-def threatenIfInserted(tempPiecesPlaced, threatList):
-    for elem in tempPiecesPlaced:
-        if tuple(elem[1]) in threatList:
-            return True
-    return False
+# def threatenIfInserted(tempPiecesPlaced, threatList):
+#     for elem in tempPiecesPlaced:
+#         if tuple(elem[1]) in threatList:
+#             return True
+#     return False
  
-def pushNextPiece(l):
-    tempList = deepcopy(l)
-    piece = tempList.pop(0)
-    return piece, tempList
+# def pushNextPiece(l):
+#     tempList = deepcopy(l)
+#     piece = tempList.pop(0)
+#     return piece, tempList
  
-def placePiece(stateToExpand, piece, remPieces):
-    global queue
-    global obstacleList
- 
+def genPlacementQueue(stateToExpand):
     placementQueue = []
-    hq.heapify(placementQueue)
-    for i in range(0, rows):
-        for j in range(0, cols):
-            coord = []
-            coord.append(i)
-            coord.append(j)
- 
-            if not isOccupied(coord, stateToExpand):
-                if piece == "King": 
-                    threatList = enemyKingThreat(coord)
-                if piece == "Queen":
-                    threatList = enemyQueenThreat(coord)
-                if piece == "Bishop":
-                    threatList = enemyBishopThreat(coord)
-                if piece == "Rook":
-                    threatList = enemyRookThreat(coord)
-                if piece == "Knight":
-                    threatList = enemyKnightThreat(coord)
-                threatList.append(tuple(coord))
- 
-                if not threatenIfInserted(stateToExpand.piecesPlaced, threatList):
-                    tempPiecesPlaced = []
-                    tempPiecesPlaced.append((piece, tuple(coord)))
-                    tempPiecesPlaced.extend(stateToExpand.piecesPlaced)
-                    threatList.extend(stateToExpand.threatenedSpaces)
-                    tempThreatenedSpacesSet = set(threatList)
-                    tempThreatenedSpaces = list(tempThreatenedSpacesSet)
- 
-                    updatedNumFree = rows * cols - len(tempThreatenedSpaces) - len(obstacleList)
- 
-                    tempState = State(updatedNumFree, remPieces, tempPiecesPlaced, tempThreatenedSpaces)
-                    hq.heappush(placementQueue, (-1 * tempState.numFree, tempState))
+
+    if stateToExpand.isMaxPlayer():
+        colourToExpand = "White"
+    else:
+        colourToExpand = "Black"
     
-    limit = 3
-    if len(placementQueue) < limit:
-        limit = len(placementQueue)
-    for i in range(0, limit):
-        score, tempState = hq.heappop(placementQueue)
-        queue.insert(0, (-1 * score, tempState))
- 
-def search():
-    global pieceList
-    global numFree
- 
-    initialRemPieces = deepcopy(pieceList)
-    initialState = State(numFree, initialRemPieces, [], [])
- 
-    nextPiece, updatedRemPieces = pushNextPiece(initialState.remPieces)
-    placePiece(initialState, nextPiece, updatedRemPieces)
- 
-    counter = 0
-    while queue:
-        score, stateToExpand = queue.pop(0)
-        if isComplete(stateToExpand):
-            return stateToExpand, counter
-        if score > 0 and len(stateToExpand.remPieces) > 0 and score >= len(stateToExpand.remPieces):
-            nextPiece, updatedRemPieces = pushNextPiece(stateToExpand.remPieces)
-            placePiece(stateToExpand, nextPiece, updatedRemPieces)
-        counter += 1
- 
-    return None, 0
+    for coord in stateToExpand.gameboard:
+        # print("coord = {}".format(coord))
+        # print(strIntTupleToCoord(coord))
+        piece, colour = stateToExpand.gameboard[coord]
+        # print(piece)
+        # print(strIntTupleToCoord(coord))
+        
+        if colour == colourToExpand:
+            threatList = genThreatList(piece, colour, stateToExpand, strIntTupleToCoord(coord))
+                # print(threatList)
 
-#Implement your minimax with alpha-beta pruning algorithm here.
-def ab():
-    initialState = State({}, {}, 0)
-    insertPieces(initialState)
-    print(initialState)
+            for threat in threatList:
+                # print("threat = {}".format(threat))
+                # print("coord2 = {}".format(coord))
+                # score = calcHeuristic(newStateToExpand, threat)
+                # print("whiteScore = {} | blackScore = {}".format(whiteScore, blackScore))
+                placementQueue.append((coord, coordToStrIntTuple(threat)))
+    return placementQueue
 
+def genNewState(state, start, stop):
+    # print("genNewState: start = {} | stop = {}".format(start, stop))
+    newGameboard = deepcopy(state.gameboard)
+    piece, colour = newGameboard[start]
+    newGameboard.pop(start)
+    if stop in newGameboard:
+        newGameboard.pop(stop)
+    newGameboard[stop] = (piece, colour)
+    # print(state.turn -1)
+    return State(newGameboard, state.turn - 1)
+
+def ab(state, alpha, beta):
+    # print("ab")
+    # print(state.turn)
+    if state.turn == 0 or isGameOver(state):
+        # print("game over")
+        # print(state)
+        return calcHeuristic(state), None
+    
+    # print("placement queue in ab: {}".format(placementQueue))
+    if state.isMaxPlayer():
+        placementQueue = genPlacementQueue(state)
+        maxEval = -math.inf
+        bestMove = None
+        for child in placementQueue:
+            # print("max eval")
+            start, stop = child
+            newState = genNewState(state, start, stop)
+            eval, currMove = ab(newState, alpha, beta)
+            # print("eval, currMove = {}, {}".format(eval, currMove))
+            if eval > maxEval:
+                # print("eval is new maxEval")
+                bestMove = child
+                # print("bestMove = {}".format(bestMove))
+                maxEval = eval
+                # print("maxEval = {}".format(maxEval))
+            alpha = max(alpha, eval)
+            # print("alpha = {}".format(alpha))
+            if beta <= alpha:
+                # print("break: beta = {} <= alpha = {}".format(alpha, beta))
+                break
+        # print("maxEval, bestMove = {}, {}".format(maxEval, bestMove))
+        return maxEval, bestMove
+        
+    else:
+        placementQueue = genPlacementQueue(state)
+        minEval = math.inf
+        bestMove = None
+        for child in placementQueue:
+            # print("min eval")
+            start, stop = child
+            newState = genNewState(state, start, stop)
+            eval, currMove = ab(newState, alpha, beta)
+            if eval < minEval:
+                bestMove = child
+                minEval = eval
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return minEval, bestMove
 
 ### DO NOT EDIT/REMOVE THE FUNCTION HEADER BELOW###
 # Chess Pieces: King, Queen, Knight, Bishop, Rook (First letter capitalized)
@@ -319,11 +438,23 @@ def ab():
 # move example: (('a', 0), ('b', 3))
 
 def studentAgent(gameboard):
+    global maxTurns
     # You can code in here but you cannot remove this function, change its parameter or change the return type
     # config = sys.argv[1] #Takes in config.txt Optional
 
-    move = (None, None)
-    return move #Format to be returned (('a', 0), ('b', 3))
+    gameState = State(gameboard, maxTurns)
+    # moveList = genPlacementQueue(gameState)
+    # evaluatedMoves = []
+    # hq.heapify(evaluatedMoves)
+    # for move in moveList:
+    #     # print("new move")
+    #     start, stop = move
+    #     hq.heappush(evaluatedMoves, (-1 * ab(gameState, stop, -math.inf, math.inf), start, stop))
+    score, selectedMove = ab(gameState, -math.inf, math.inf)
+    print("selectedMove = {}".format(selectedMove))
+    return selectedMove #Format to be returned (('a', 0), ('b', 3))
 
 if __name__ == "__main__":
-    ab()
+
+    gameboard = initializeGameboard()
+    studentAgent(gameboard)
