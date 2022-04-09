@@ -10,8 +10,8 @@ board = []
 queue = []
 numFree = 0
 numPieces = 0
-maxTurns = 3
- 
+maxTurns = 2
+
 class State:
     def __init__(self, gameboard, turn):
         self.gameboard = gameboard
@@ -56,7 +56,6 @@ def kingThreat(colour, state, pos):
     global cols
 
     threatList = []
-    # print("king pos = {}".format(pos))
     row = pos[0]
     col = pos[1]
     for i in range (-1, 2):
@@ -164,21 +163,25 @@ def pawnThreat(colour, state, pos):
     threatList = []
     row = pos[0]
     col = pos[1]
-    # print(pos, coordToStrIntTuple(pos))
+    # print(coordToStrIntTuple(pos))
     if colour == "White":
-        coeff = -1
-    else:
-        # print("Black coeff = 1")
         coeff = 1
-    for i in range (-1, 2):
-        if 0 <= row - (i * coeff) < rows and 0 <= col < cols and not isOccupied(colour, state, rowColToCoord(row - (i * coeff), col)):
-            # print("true again")
-            threatList.append(tuple(rowColToCoord(row - (i * coeff), col)))
-        if isEnemy(colour, state, rowColToCoord(row - (i * coeff), col + 1)):
-            threatList.append(tuple(rowColToCoord(row - (i * coeff), col + 1)))
-        if isEnemy(colour, state, rowColToCoord(row - (i * coeff), col - 1)):
-            threatList.append(tuple(rowColToCoord(row - (i * coeff), col - 1)))
-    print("pawn threatList = {}".format(threatList))
+    else:
+        # print("Black coeff = -1")
+        coeff = -1
+    
+    # print("coeff = {}".format(coeff))
+    if 0 <= row + (1 * coeff) < rows and 0 <= col < cols and not isOccupied(colour, state, rowColToCoord(row + (1 * coeff), col)):
+        # print("pawn forward = {}".format(coordToStrIntTuple(rowColToCoord(row + (1 * coeff), col))))
+        threatList.append(tuple(rowColToCoord(row + (1 * coeff), col)))
+    if 0 <= row + (1 * coeff) < rows and 0 <= col + 1 < cols and isEnemy(colour, state, rowColToCoord(row + (1 * coeff), col + 1)):
+        # print("col + 1 = {}".format(coordToStrIntTuple(rowColToCoord(row + (1 * coeff), col + 1))))
+        threatList.append(tuple(rowColToCoord(row + (1 * coeff), col + 1)))
+    if 0 <= row + (1 * coeff) < rows and 0 <= col - 1 < cols and isEnemy(colour, state, rowColToCoord(row + (1 * coeff), col - 1)):
+        # print("col - 1 = {}".format(coordToStrIntTuple(rowColToCoord(row + (1 * coeff), col - 1))))
+        threatList.append(tuple(rowColToCoord(row + (1 * coeff), col - 1)))
+    # print(state.gameboard)
+    # print("{} pawn threatList = {}".format(colour, threatList))
     return threatList
 
 # pos should be in (int, int) form
@@ -212,7 +215,7 @@ def genThreatList(piece, colour, state, coord):
 # boriginalPos should be in (int, int) form
 def calcHeuristic(state):
     # print("calcHeuristic: originalPos = {}".format(originalPos))
-    materialScore = {'King': 0, 'Pawn': 10, 'Bishop': 3, 'Knight': 3, 'Rook': 5, 'Queen': 9}
+    materialScore = {'King': 1000, 'Pawn': 1, 'Bishop': 3, 'Knight': 3, 'Rook': 5, 'Queen': 200}
     white = set()
     black = set()
     whiteScore = 0
@@ -273,15 +276,13 @@ def isFriendly(originalColour, state, coordToCheck):
     if coordToStrIntTuple(coordToCheck) in state.gameboard:
         piece, colour = state.gameboard[coordToStrIntTuple(coordToCheck)]
         return colour == originalColour
-    else:
-        return False
+    return False
 
 def isEnemy(originalColour, state, coordToCheck):
     if coordToStrIntTuple(coordToCheck) in state.gameboard:
         piece, colour = state.gameboard[coordToStrIntTuple(coordToCheck)]
         return colour != originalColour
-    else:
-        return False
+    return False
 
 def isGameOver(state):
     kings = set()
@@ -291,19 +292,9 @@ def isGameOver(state):
         # print(piece, colour)
         if piece == "King":
             kings.add(strIntTupleToCoord(coord))
-
         if piece != "King":
-            threatList = genThreatList(piece, colour, state, strIntTupleToCoord(coord))
-            # print(threatList)
-            threats.update(set(threatList))
-            # print("inside threats = {}".format(threats))
-    # print("kings = {}".format(kings))
-    # print("threats = {}".format(threats))
-    # if len(kings.intersection(threats)) != 0:
-    #     print("game is over")
-    # else:
-    #     print("game is not over")
-    return len(kings.intersection(threats)) != 0
+            threats.update(set(genEnemyPos(state, strIntTupleToCoord(coord))))
+    return len(kings.intersection(threats)) > 0
 
 def asciiToInt(c):
     return ord(c) - ord('a')
@@ -343,70 +334,47 @@ def genPlacementQueue(stateToExpand):
         colourToExpand = "Black"
     
     for coord in stateToExpand.gameboard:
-        # print("coord = {}".format(coord))
-        # print(strIntTupleToCoord(coord))
         piece, colour = stateToExpand.gameboard[coord]
-        # print(piece)
-        # print(strIntTupleToCoord(coord))
         
         if colour == colourToExpand:
             threatList = genThreatList(piece, colour, stateToExpand, strIntTupleToCoord(coord))
-                # print(threatList)
 
             for threat in threatList:
-                # print("threat = {}".format(threat))
-                # print("coord2 = {}".format(coord))
-                # score = calcHeuristic(newStateToExpand, threat)
-                # print("whiteScore = {} | blackScore = {}".format(whiteScore, blackScore))
                 placementQueue.append((coord, coordToStrIntTuple(threat)))
     return placementQueue
 
 def genNewState(state, start, stop):
-    # print("genNewState: start = {} | stop = {}".format(start, stop))
-    newGameboard = deepcopy(state.gameboard)
+    newGameboard = {}
+    for i in state.gameboard:
+        newGameboard[i] = state.gameboard[i]
     piece, colour = newGameboard[start]
     newGameboard.pop(start)
     if stop in newGameboard:
         newGameboard.pop(stop)
     newGameboard[stop] = (piece, colour)
-    # print(state.turn -1)
     return State(newGameboard, state.turn - 1)
 
 def ab(state, alpha, beta):
-    # print("ab")
-    # print(state.turn)
     if state.turn == 0 or isGameOver(state):
-        # print("game over")
-        # print(state)
         return calcHeuristic(state), None
     
-    # print("placement queue in ab: {}".format(placementQueue))
+    placementQueue = genPlacementQueue(state)
     if state.isMaxPlayer():
-        placementQueue = genPlacementQueue(state)
         maxEval = -math.inf
         bestMove = None
         for child in placementQueue:
-            # print("max eval")
             start, stop = child
             newState = genNewState(state, start, stop)
             eval, currMove = ab(newState, alpha, beta)
-            # print("eval, currMove = {}, {}".format(eval, currMove))
             if eval > maxEval:
-                # print("eval is new maxEval")
                 bestMove = child
-                # print("bestMove = {}".format(bestMove))
                 maxEval = eval
-                # print("maxEval = {}".format(maxEval))
             alpha = max(alpha, eval)
-            # print("alpha = {}".format(alpha))
             if beta <= alpha:
-                # print("break: beta = {} <= alpha = {}".format(alpha, beta))
                 break
-        # print("maxEval, bestMove = {}, {}".format(maxEval, bestMove))
         return maxEval, bestMove
         
     else:
-        placementQueue = genPlacementQueue(state)
         minEval = math.inf
         bestMove = None
         for child in placementQueue:
@@ -443,16 +411,10 @@ def studentAgent(gameboard):
     # config = sys.argv[1] #Takes in config.txt Optional
 
     gameState = State(gameboard, maxTurns)
-    # moveList = genPlacementQueue(gameState)
-    # evaluatedMoves = []
-    # hq.heapify(evaluatedMoves)
-    # for move in moveList:
-    #     # print("new move")
-    #     start, stop = move
-    #     hq.heappush(evaluatedMoves, (-1 * ab(gameState, stop, -math.inf, math.inf), start, stop))
-    score, selectedMove = ab(gameState, -math.inf, math.inf)
-    print("selectedMove = {}".format(selectedMove))
-    return selectedMove #Format to be returned (('a', 0), ('b', 3))
+    finalEval, finalMove = ab(gameState, -math.inf, math.inf)
+    start, stop = finalMove
+    # print(finalMove)
+    return (start, stop) #Format to be returned (('a', 0), ('b', 3))
 
 if __name__ == "__main__":
 
